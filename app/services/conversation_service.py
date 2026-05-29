@@ -18,6 +18,26 @@ from app.services.user_service import UserService
 logger = structlog.get_logger()
 
 
+def _find_next(chars: list[str], target: str, start: int) -> int:
+    try:
+        return chars.index(target, start)
+    except ValueError:
+        return -1
+
+
+def _find_next_sentence_end(chars: list[str], start: int) -> int:
+    for index in range(start, len(chars)):
+        if chars[index] in ".\n":
+            return index
+    return -1
+
+
+def _trim_insert_position(chars: list[str], index: int) -> int:
+    while index > 0 and chars[index - 1].isspace():
+        index -= 1
+    return index
+
+
 class ConversationService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -196,7 +216,37 @@ class ConversationService:
                 return f"{leading}¡{stripped}"
             return segment
 
-        return re.sub(r"[^.!?]*[?!]+", normalize_match, text)
+        normalized = re.sub(r"[^.!?]*[?!]+", normalize_match, text)
+        return ConversationService._close_unpaired_spanish_marks(normalized)
+
+    @staticmethod
+    def _close_unpaired_spanish_marks(text: str) -> str:
+        chars = list(text)
+        index = 0
+        while index < len(chars):
+            opener = chars[index]
+            closer = "?" if opener == "¿" else "!" if opener == "¡" else None
+            if closer is None:
+                index += 1
+                continue
+
+            next_same = _find_next(chars, opener, index + 1)
+            next_closer = _find_next(chars, closer, index + 1)
+            sentence_end = _find_next_sentence_end(chars, index + 1)
+            boundary = min(
+                candidate
+                for candidate in (next_same, sentence_end, len(chars))
+                if candidate != -1
+            )
+
+            if next_closer == -1 or next_closer > boundary:
+                insert_at = _trim_insert_position(chars, boundary)
+                chars.insert(insert_at, closer)
+                index = insert_at + 1
+            else:
+                index = next_closer + 1
+
+        return "".join(chars)
 
     @staticmethod
     def _remove_stale_natural_variant(response: dict, history: list) -> None:

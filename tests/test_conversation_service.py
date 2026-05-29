@@ -81,6 +81,20 @@ def test_normalize_response_spanish_punctuation() -> None:
     assert response["corrections"][0]["corrected"] == "¿tú?"
 
 
+def test_normalize_response_spanish_punctuation_closes_opening_marks() -> None:
+    response = {
+        "natural_variant": "Hola, ¿cómo está",
+        "reply": "¡Estoy bien",
+        "corrections": [{"original": "coma esta", "corrected": "¿cómo está"}],
+    }
+
+    ConversationService._normalize_response_spanish_punctuation(response)
+
+    assert response["natural_variant"] == "Hola, ¿cómo está?"
+    assert response["reply"] == "¡Estoy bien!"
+    assert response["corrections"][0]["corrected"] == "¿cómo está?"
+
+
 def test_remove_stale_natural_variant_from_history_corrected_text() -> None:
     response = {"natural_variant": "Mi día es perfecto, ¿y tú?"}
     history = [
