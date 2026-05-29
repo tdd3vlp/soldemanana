@@ -1,11 +1,16 @@
+import redis.asyncio as aioredis
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-import redis.asyncio as aioredis
+from aiogram.fsm.storage.redis import RedisStorage
 
+from app.bot.middlewares import (
+    DatabaseMiddleware,
+    MessageLimitMiddleware,
+    ThrottlingMiddleware,
+    UserMiddleware,
+)
 from app.config import settings
-from app.bot.middlewares import DatabaseMiddleware, UserMiddleware, ThrottlingMiddleware, MessageLimitMiddleware
 
 
 def create_bot() -> Bot:
@@ -36,19 +41,21 @@ def create_dispatcher(redis_url: str) -> Dispatcher:
 
 def _register_handlers(dp: Dispatcher) -> None:
     from app.bot.handlers import (
-        start,
-        menu,
         conversation,
         correction,
-        scenarios,
+        fallback,
         grammar,
+        menu,
+        scenarios,
+        start,
         subscription,
     )
 
     dp.include_router(start.router)
     dp.include_router(menu.router)
+    dp.include_router(subscription.router)
     dp.include_router(conversation.router)
     dp.include_router(correction.router)
     dp.include_router(scenarios.router)
     dp.include_router(grammar.router)
-    dp.include_router(subscription.router)
+    dp.include_router(fallback.router)

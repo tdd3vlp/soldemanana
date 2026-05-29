@@ -1,4 +1,14 @@
-from app.bot.handlers import start, menu, conversation, correction, scenarios, grammar, subscription, admin
+from app.bot.handlers import (
+    admin,
+    conversation,
+    correction,
+    fallback,
+    grammar,
+    menu,
+    scenarios,
+    start,
+    subscription,
+)
 
 __all__ = [
     "start",
@@ -9,4 +19,5 @@ __all__ = [
     "grammar",
     "subscription",
     "admin",
+    "fallback",
 ]

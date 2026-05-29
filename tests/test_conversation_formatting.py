@@ -2,6 +2,8 @@ from app.bot.handlers.conversation import (
     _build_inline_corrections,
     _build_russian_input_translation,
     _contains_cyrillic,
+    _is_likely_english,
+    _is_likely_gibberish,
 )
 
 
@@ -45,3 +47,18 @@ def test_build_russian_input_translation() -> None:
     )
 
     assert result == "🇷🇺 Я хочу поехать в Испанию\n🇪🇸 <code>Quiero ir a España.</code>"
+
+
+def test_is_likely_english_blocks_english_without_blocking_spanish_or_russian() -> None:
+    assert _is_likely_english("I am from Russia but want to go to Spain") is True
+    assert _is_likely_english("How can I say this?") is True
+    assert _is_likely_english("Estoy de Rusia, pero quiero ir a Espana") is False
+    assert _is_likely_english("Я хочу сказать это по-испански") is False
+
+
+def test_is_likely_gibberish_blocks_keyboard_mash_and_numbers() -> None:
+    assert _is_likely_gibberish("hjkdjhd dfghjdf") is True
+    assert _is_likely_gibberish("орлова сорлов ыворппппв") is True
+    assert _is_likely_gibberish("123456") is True
+    assert _is_likely_gibberish("Estoy de Rusia") is False
+    assert _is_likely_gibberish("Я хочу в Испанию") is False

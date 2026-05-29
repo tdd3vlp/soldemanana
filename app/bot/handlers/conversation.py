@@ -1,3 +1,4 @@
+import re
 from html import escape
 
 from aiogram import F, Router
@@ -73,6 +74,20 @@ async def handle_conversation_message(
         await state.clear()
         return
 
+    if _is_likely_gibberish(message.text):
+        await message.answer(
+            "Не совсем понял, что ты хотел сказать. Напиши фразу ещё раз "
+            "на испанском или по-русски, если не знаешь, как сказать это по-испански."
+        )
+        return
+
+    if _is_likely_english(message.text):
+        await message.answer(
+            "Пиши, пожалуйста, на испанском. Если не знаешь, как сказать фразу "
+            "по-испански, напиши её по-русски — я переведу и помогу продолжить."
+        )
+        return
+
     user_service = UserService(session)
     await user_service.increment_message_count(db_user)
 
@@ -120,6 +135,84 @@ async def handle_conversation_message(
 
 def _contains_cyrillic(text: str | None) -> bool:
     return bool(text and any("а" <= char.lower() <= "я" or char.lower() == "ё" for char in text))
+
+
+def _is_likely_gibberish(text: str | None) -> bool:
+    if not text:
+        return False
+
+    normalized = text.strip().lower()
+    if re.search(r"(.)\1{3,}", normalized):
+        return True
+
+    letters = re.findall(r"[a-zа-яёáéíóúüñ]", normalized)
+    digits = re.findall(r"\d", normalized)
+    if len(digits) >= 4 and not letters:
+        return True
+
+    words = re.findall(r"[a-zа-яёáéíóúüñ]+", normalized)
+    if not words:
+        return False
+
+    bad_words = sum(_is_gibberish_word(word) for word in words)
+    return bad_words >= 2 or (len(words) == 1 and bad_words == 1)
+
+
+def _is_gibberish_word(word: str) -> bool:
+    if len(word) < 5:
+        return False
+
+    if re.fullmatch(r"[a-z]+", word):
+        vowels = sum(char in "aeiouy" for char in word)
+        return vowels / len(word) < 0.2
+
+    return False
+
+
+def _is_likely_english(text: str | None) -> bool:
+    if not text or _contains_cyrillic(text):
+        return False
+    if any(char in text.lower() for char in "áéíóúüñ¿¡"):
+        return False
+
+    words = re.findall(r"[a-z]+(?:'[a-z]+)?", text.lower())
+    if not words:
+        return False
+
+    english_markers = {
+        "am",
+        "are",
+        "but",
+        "can",
+        "do",
+        "does",
+        "don't",
+        "from",
+        "hello",
+        "hi",
+        "how",
+        "i",
+        "i'm",
+        "is",
+        "know",
+        "my",
+        "need",
+        "please",
+        "say",
+        "thanks",
+        "that",
+        "the",
+        "this",
+        "to",
+        "want",
+        "what",
+        "where",
+        "with",
+        "you",
+        "your",
+    }
+    marker_count = sum(word in english_markers for word in words)
+    return marker_count >= 2 or (len(words) <= 3 and marker_count >= 1)
 
 
 def _build_russian_input_translation(text: str, natural_variant: str) -> str:
