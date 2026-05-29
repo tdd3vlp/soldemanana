@@ -36,6 +36,19 @@ def test_build_inline_corrections_uses_natural_variant_for_missing_correction_it
     assert result == "Estoy de Rusia, pero quiero <s>voy</s> ir a <s>Espana</s> España."
 
 
+def test_build_inline_corrections_uses_punctuated_natural_variant() -> None:
+    result = _build_inline_corrections(
+        "Hola, coma esta",
+        [
+            {"original": "coma", "corrected": "cómo"},
+            {"original": "esta", "corrected": "estás"},
+        ],
+        "Hola, ¿cómo estás?",
+    )
+
+    assert result == "Hola, <s>coma</s> ¿cómo <s>esta</s> estás?"
+
+
 def test_contains_cyrillic_detects_russian_input() -> None:
     assert _contains_cyrillic("Я хочу сказать это по-испански") is True
     assert _contains_cyrillic("Estoy aprendiendo español") is False

@@ -81,6 +81,21 @@ def test_ensure_conversation_reply_adds_fallback_after_repeated_reply_removed() 
     assert response["reply_translation"] == "Я хорошо, спасибо. Как проходит твой день?"
 
 
+def test_ensure_natural_variant_reconstructs_question_from_word_corrections() -> None:
+    response = {
+        "has_errors": True,
+        "corrections": [
+            {"original": "coma", "corrected": "cómo"},
+            {"original": "esta", "corrected": "estás"},
+        ],
+        "natural_variant": None,
+    }
+
+    ConversationService._ensure_natural_variant(response, "Hola, coma esta")
+
+    assert response["natural_variant"] == "Hola, ¿cómo estás?"
+
+
 def test_normalize_response_spanish_punctuation() -> None:
     response = {
         "natural_variant": "Mi día es perfecto, y tú?",
@@ -93,6 +108,20 @@ def test_normalize_response_spanish_punctuation() -> None:
     assert response["natural_variant"] == "Mi día es perfecto, ¿y tú?"
     assert response["reply"] == "¡Estoy bien! ¿Que has hecho hoy?"
     assert response["corrections"][0]["corrected"] == "¿tú?"
+
+
+def test_normalize_response_spanish_punctuation_infers_question_words() -> None:
+    response = {
+        "natural_variant": "Hola, cómo estás",
+        "reply": "Qué has hecho hoy",
+        "corrections": [{"original": "coma", "corrected": "cómo"}],
+    }
+
+    ConversationService._normalize_response_spanish_punctuation(response)
+
+    assert response["natural_variant"] == "Hola, ¿cómo estás?"
+    assert response["reply"] == "¿Qué has hecho hoy?"
+    assert response["corrections"][0]["corrected"] == "cómo"
 
 
 def test_normalize_response_spanish_punctuation_closes_opening_marks() -> None:

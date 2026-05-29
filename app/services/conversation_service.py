@@ -17,6 +17,29 @@ from app.services.user_service import UserService
 
 logger = structlog.get_logger()
 
+SPANISH_QUESTION_WORDS = (
+    "adonde",
+    "cómo",
+    "cuando",
+    "cuándo",
+    "cuál",
+    "cuáles",
+    "cuanto",
+    "cuánto",
+    "cuánta",
+    "cuántos",
+    "cuántas",
+    "donde",
+    "dónde",
+    "por qué",
+    "que",
+    "qué",
+    "quien",
+    "quién",
+    "quienes",
+    "quiénes",
+)
+
 
 def _find_next(chars: list[str], target: str, start: int) -> int:
     try:
@@ -63,7 +86,12 @@ class ConversationService:
         messages.append({"role": "user", "content": text})
 
         try:
-            response = await llm_client.complete(system_prompt, messages, task=LLMTask.CHAT)
+            response = await llm_client.complete(
+                system_prompt,
+                messages,
+                temperature=0.4,
+                task=LLMTask.CHAT,
+            )
             if "error" in response:
                 logger.error("LLM response error", response=response)
                 return {
@@ -81,9 +109,11 @@ class ConversationService:
             )
             self._normalize_response_spanish_punctuation(response)
             self._keep_current_message_corrections(response, text)
+            self._ensure_natural_variant(response, text)
             self._remove_stale_natural_variant(response, history)
             self._remove_repeated_correction_reply(response)
             self._ensure_conversation_reply(response)
+            self._normalize_response_spanish_punctuation(response)
 
             await self.user_service.save_message(
                 user=user,
@@ -207,10 +237,40 @@ class ConversationService:
                     continue
                 corrected = item.get("corrected")
                 if isinstance(corrected, str):
-                    item["corrected"] = cls._normalize_spanish_punctuation(corrected)
+                    item["corrected"] = cls._normalize_spanish_punctuation(
+                        corrected,
+                        infer_questions=False,
+                    )
 
     @staticmethod
-    def _normalize_spanish_punctuation(text: str) -> str:
+    def _ensure_natural_variant(response: dict, text: str) -> None:
+        natural_variant = response.get("natural_variant")
+        if isinstance(natural_variant, str) and natural_variant.strip():
+            return
+
+        corrections = response.get("corrections")
+        if not isinstance(corrections, list) or not corrections:
+            return
+
+        corrected_text = text
+        for correction in corrections:
+            if not isinstance(correction, dict):
+                continue
+            original = correction.get("original")
+            corrected = correction.get("corrected")
+            if not isinstance(original, str) or not isinstance(corrected, str):
+                continue
+            if not original.strip() or not corrected.strip():
+                continue
+            corrected_text = corrected_text.replace(original, corrected, 1)
+
+        if corrected_text != text:
+            response["natural_variant"] = ConversationService._normalize_spanish_punctuation(
+                corrected_text
+            )
+
+    @staticmethod
+    def _normalize_spanish_punctuation(text: str, infer_questions: bool = True) -> str:
         def normalize_match(match: re.Match[str]) -> str:
             segment = match.group(0)
             stripped = segment.lstrip()
@@ -227,7 +287,37 @@ class ConversationService:
             return segment
 
         normalized = re.sub(r"[^.!?]*[?!]+", normalize_match, text)
+        if infer_questions:
+            normalized = ConversationService._add_missing_question_marks(normalized)
         return ConversationService._close_unpaired_spanish_marks(normalized)
+
+    @staticmethod
+    def _add_missing_question_marks(text: str) -> str:
+        if "?" in text or "¿" in text:
+            return text
+
+        comma_index = text.rfind(",")
+        if comma_index >= 0:
+            tail = text[comma_index + 1 :].strip()
+            if ConversationService._looks_like_spanish_question(tail):
+                return f"{text[:comma_index + 1]} ¿{tail}?"
+
+        stripped = text.strip()
+        if not ConversationService._looks_like_spanish_question(stripped):
+            return text
+
+        leading = text[: len(text) - len(text.lstrip())]
+        return f"{leading}¿{stripped}?"
+
+    @staticmethod
+    def _looks_like_spanish_question(text: str) -> bool:
+        words = re.findall(r"[a-záéíóúüñ]+", text.casefold())
+        if not words or len(words) > 6:
+            return False
+
+        first_word = words[0]
+        first_two_words = " ".join(words[:2])
+        return first_word in SPANISH_QUESTION_WORDS or first_two_words in SPANISH_QUESTION_WORDS
 
     @staticmethod
     def _close_unpaired_spanish_marks(text: str) -> str:
