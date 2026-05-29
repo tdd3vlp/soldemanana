@@ -83,6 +83,8 @@ def build_system_prompt(
             "Check and correct only the latest user message, never older history. "
             "reply must continue the conversation, not repeat or paraphrase "
             "the user's corrected sentence. "
+            "If the latest user message is in Russian, translate or polish it into natural Spanish "
+            "in natural_variant, set has_errors=false and corrections=[], then continue in reply. "
             "reply_translation must be Russian. "
             "Translation only for A0-A2 or hard words."
         )

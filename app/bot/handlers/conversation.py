@@ -87,6 +87,7 @@ async def handle_conversation_message(
         return
 
     parts = []
+    is_russian_input = _contains_cyrillic(message.text)
 
     if response.get("has_errors") and response.get("corrections"):
         parts.append(
@@ -98,7 +99,10 @@ async def handle_conversation_message(
         )
         parts.append("")
 
-    if response.get("natural_variant"):
+    if is_russian_input and response.get("natural_variant"):
+        parts.append(_build_russian_input_translation(message.text, response["natural_variant"]))
+        parts.append("")
+    elif response.get("natural_variant"):
         parts.append(
             f"💬 <b>Естественный вариант:</b>\n"
             f"<code>{response['natural_variant']}</code>\n"
@@ -112,6 +116,14 @@ async def handle_conversation_message(
         parts.append(f"<i>({response['reply_translation']})</i>")
 
     await message.answer("\n".join(parts))
+
+
+def _contains_cyrillic(text: str | None) -> bool:
+    return bool(text and any("а" <= char.lower() <= "я" or char.lower() == "ё" for char in text))
+
+
+def _build_russian_input_translation(text: str, natural_variant: str) -> str:
+    return f"🇷🇺 {escape(text)}\n🇪🇸 <code>{escape(natural_variant)}</code>"
 
 
 def _build_inline_corrections(
