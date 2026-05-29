@@ -1,10 +1,12 @@
-from aiogram import Router, F
-from aiogram.types import Message
+from html import escape
+
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.states import ConversationStates
 from app.bot.keyboards import get_exit_mode_keyboard
+from app.bot.states import ConversationStates
 from app.core.models.user import User
 from app.services.conversation_service import ConversationService
 from app.services.limit_service import LimitService
@@ -14,7 +16,12 @@ router = Router()
 
 
 @router.message(F.text == "🗣️ Свободный разговор")
-async def start_conversation(message: Message, state: FSMContext, db_user: User, session: AsyncSession) -> None:
+async def start_conversation(
+    message: Message,
+    state: FSMContext,
+    db_user: User,
+    session: AsyncSession,
+) -> None:
     if not db_user.is_onboarded:
         await message.answer("❌ Сначала пройди /start для настройки бота.")
         return
@@ -28,7 +35,8 @@ async def start_conversation(message: Message, state: FSMContext, db_user: User,
     
     base_text = (
         "🗣️ <b>Режим свободного разговора</b>\n\n"
-        "Пиши мне на испанском — о чём угодно! Я буду отвечать, исправлять ошибки и объяснять их.\n\n"
+        "Пиши мне на испанском — о чём угодно! "
+        "Я буду отвечать, исправлять ошибки и объяснять их.\n\n"
     )
     
     if db_user.level == "A0":
@@ -81,17 +89,20 @@ async def handle_conversation_message(
     parts = []
 
     if response.get("has_errors") and response.get("corrections"):
-        parts.append("✏️ <b>Исправления:</b>")
-        for correction in response["corrections"]:
-            parts.append(
-                f"❌ <code>{correction['original']}</code> → "
-                f"✅ <code>{correction['corrected']}</code>\n"
-                f"<i>{correction['explanation']}</i>"
+        parts.append(
+            _build_inline_corrections(
+                message.text,
+                response["corrections"],
+                response.get("natural_variant"),
             )
+        )
         parts.append("")
 
     if response.get("natural_variant"):
-        parts.append(f"💬 <b>Естественный вариант:</b>\n<code>{response['natural_variant']}</code>\n")
+        parts.append(
+            f"💬 <b>Естественный вариант:</b>\n"
+            f"<code>{response['natural_variant']}</code>\n"
+        )
 
     bot_reply = response.get("reply", "")
     if bot_reply:
@@ -101,3 +112,63 @@ async def handle_conversation_message(
         parts.append(f"<i>({response['reply_translation']})</i>")
 
     await message.answer("\n".join(parts))
+
+
+def _build_inline_corrections(
+    text: str,
+    corrections: list[dict],
+    natural_variant: str | None = None,
+) -> str:
+    if natural_variant:
+        diff = _build_inline_replacement(text, natural_variant)
+        if diff:
+            return diff
+
+    result = escape(text)
+
+    for correction in corrections:
+        original = correction.get("original")
+        corrected = correction.get("corrected")
+        if not original or not corrected:
+            continue
+
+        escaped_original = escape(str(original))
+        replacement = _build_inline_replacement(str(original), str(corrected))
+        result = result.replace(escaped_original, replacement, 1)
+
+    return result
+
+
+def _build_inline_replacement(original: str, corrected: str) -> str:
+    original_words = original.split()
+    corrected_words = corrected.split()
+
+    if len(original_words) != len(corrected_words):
+        return ""
+
+    parts = []
+    for original_word, corrected_word in zip(original_words, corrected_words):
+        if original_word == corrected_word:
+            parts.append(escape(original_word))
+        else:
+            parts.append(_format_changed_word(original_word, corrected_word))
+
+    return " ".join(parts)
+
+
+def _format_changed_word(original: str, corrected: str) -> str:
+    original_core, original_suffix = _split_trailing_punctuation(original)
+    corrected_core, corrected_suffix = _split_trailing_punctuation(corrected)
+
+    if original_suffix == corrected_suffix and original_core and corrected_core:
+        return f"<s>{escape(original_core)}</s> {escape(corrected_core + corrected_suffix)}"
+
+    return f"<s>{escape(original)}</s> {escape(corrected)}"
+
+
+def _split_trailing_punctuation(word: str) -> tuple[str, str]:
+    punctuation = ".,!?;:"
+    index = len(word)
+    while index > 0 and word[index - 1] in punctuation:
+        index -= 1
+    return word[:index], word[index:]

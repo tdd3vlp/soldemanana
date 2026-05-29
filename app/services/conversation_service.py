@@ -57,6 +57,7 @@ class ConversationService:
                 response.get("_llm_usage"),
             )
             self._keep_current_message_corrections(response, text)
+            self._remove_repeated_correction_reply(response)
 
             await self.user_service.save_message(
                 user=user,
@@ -141,3 +142,16 @@ class ConversationService:
         normalized_original = " ".join(original.split()).casefold()
         normalized_text = " ".join(text.split()).casefold()
         return normalized_original in normalized_text
+
+    @staticmethod
+    def _remove_repeated_correction_reply(response: dict) -> None:
+        reply = response.get("reply")
+        natural_variant = response.get("natural_variant")
+        if not isinstance(reply, str) or not isinstance(natural_variant, str):
+            return
+
+        if " ".join(reply.split()).casefold() != " ".join(natural_variant.split()).casefold():
+            return
+
+        response["reply"] = ""
+        response["reply_translation"] = None

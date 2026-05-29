@@ -1,8 +1,11 @@
 from datetime import date
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.models.user import User
-from app.core.enums import SubscriptionTier
+
+from app.config import settings
 from app.core.constants import DAILY_MESSAGE_LIMITS
+from app.core.enums import SubscriptionTier
+from app.core.models.user import User
 
 
 class LimitService:
@@ -10,6 +13,9 @@ class LimitService:
         self.session = session
 
     def get_daily_limit(self, user: User) -> int | None:
+        if user.telegram_id in settings.admin_ids:
+            return None
+
         tier = SubscriptionTier(user.subscription_tier)
         return DAILY_MESSAGE_LIMITS.get(tier)
 

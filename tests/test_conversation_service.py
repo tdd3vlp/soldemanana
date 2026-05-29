@@ -50,3 +50,16 @@ def test_keep_current_message_corrections_clears_has_errors_when_only_history_it
 
     assert response["has_errors"] is False
     assert response["corrections"] == []
+
+
+def test_remove_repeated_correction_reply() -> None:
+    response = {
+        "natural_variant": "Estoy de Rusia, pero quiero ir a España.",
+        "reply": "Estoy de Rusia, pero quiero ir a España.",
+        "reply_translation": "Я из России, но хочу поехать в Испанию.",
+    }
+
+    ConversationService._remove_repeated_correction_reply(response)
+
+    assert response["reply"] == ""
+    assert response["reply_translation"] is None

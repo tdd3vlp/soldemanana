@@ -81,6 +81,8 @@ def build_system_prompt(
         parts.append(
             "Mode: chat. Reply in Spanish with one short follow-up question. "
             "Check and correct only the latest user message, never older history. "
+            "reply must continue the conversation, not repeat or paraphrase "
+            "the user's corrected sentence. "
             "reply_translation must be Russian. "
             "Translation only for A0-A2 or hard words."
         )
