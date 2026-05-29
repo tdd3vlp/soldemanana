@@ -25,6 +25,7 @@ BASE_RULES = (
     "Отвечай кратко, естественно, без лекций. "
     "Испанский: Espana, vosotros. "
     "Объяснения ошибок на русском. "
+    "Все переводы только на русский, никогда на английский. "
     "Не больше 2 исправлений за раз, кроме режима correction. "
     "JSON only."
 )
@@ -79,6 +80,8 @@ def build_system_prompt(
     if mode == "conversation":
         parts.append(
             "Mode: chat. Reply in Spanish with one short follow-up question. "
+            "Check and correct only the latest user message, never older history. "
+            "reply_translation must be Russian. "
             "Translation only for A0-A2 or hard words."
         )
     elif mode == "correction":
