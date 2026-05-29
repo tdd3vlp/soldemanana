@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from app.services.conversation_service import ConversationService
 
 
@@ -63,3 +65,31 @@ def test_remove_repeated_correction_reply() -> None:
 
     assert response["reply"] == ""
     assert response["reply_translation"] is None
+
+
+def test_normalize_response_spanish_punctuation() -> None:
+    response = {
+        "natural_variant": "Mi día es perfecto, y tú?",
+        "reply": "Estoy bien! Que has hecho hoy?",
+        "corrections": [{"original": "tu?", "corrected": "tú?"}],
+    }
+
+    ConversationService._normalize_response_spanish_punctuation(response)
+
+    assert response["natural_variant"] == "Mi día es perfecto, ¿y tú?"
+    assert response["reply"] == "¡Estoy bien! ¿Que has hecho hoy?"
+    assert response["corrections"][0]["corrected"] == "¿tú?"
+
+
+def test_remove_stale_natural_variant_from_history_corrected_text() -> None:
+    response = {"natural_variant": "Mi día es perfecto, ¿y tú?"}
+    history = [
+        SimpleNamespace(
+            text="Mi dia es perfecta, y tu?",
+            corrected_text="Mi día es perfecto, ¿y tú?",
+        )
+    ]
+
+    ConversationService._remove_stale_natural_variant(response, history)
+
+    assert response["natural_variant"] is None

@@ -1,3 +1,5 @@
+import re
+
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,11 +34,12 @@ class ConversationService:
             memory_context=memory_context,
         )
 
-        messages = await self.user_service.get_compact_dialog_history(
+        history = await self.user_service.get_dialog_history(
             user=user,
             mode=BotMode.CONVERSATION,
             limit=settings.dialog_history_size,
         )
+        messages = self.user_service.build_compact_messages(history)
         messages.append({"role": "user", "content": text})
 
         try:
@@ -56,7 +59,9 @@ class ConversationService:
                 BotMode.CONVERSATION.value,
                 response.get("_llm_usage"),
             )
+            self._normalize_response_spanish_punctuation(response)
             self._keep_current_message_corrections(response, text)
+            self._remove_stale_natural_variant(response, history)
             self._remove_repeated_correction_reply(response)
 
             await self.user_service.save_message(
@@ -155,3 +160,59 @@ class ConversationService:
 
         response["reply"] = ""
         response["reply_translation"] = None
+
+    @classmethod
+    def _normalize_response_spanish_punctuation(cls, response: dict) -> None:
+        for key in ("natural_variant", "reply"):
+            value = response.get(key)
+            if isinstance(value, str):
+                response[key] = cls._normalize_spanish_punctuation(value)
+
+        for key in ("corrections",):
+            items = response.get(key)
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                corrected = item.get("corrected")
+                if isinstance(corrected, str):
+                    item["corrected"] = cls._normalize_spanish_punctuation(corrected)
+
+    @staticmethod
+    def _normalize_spanish_punctuation(text: str) -> str:
+        def normalize_match(match: re.Match[str]) -> str:
+            segment = match.group(0)
+            stripped = segment.lstrip()
+            leading = segment[: len(segment) - len(stripped)]
+            if segment.rstrip().endswith("?") and "¿" not in segment:
+                comma_index = segment.rfind(",")
+                if comma_index >= 0:
+                    tail = segment[comma_index + 1 :].strip()
+                    if 0 < len(tail.split()) <= 4:
+                        return f"{segment[:comma_index + 1]} ¿{tail}"
+                return f"{leading}¿{stripped}"
+            if segment.rstrip().endswith("!") and "¡" not in segment:
+                return f"{leading}¡{stripped}"
+            return segment
+
+        return re.sub(r"[^.!?]*[?!]+", normalize_match, text)
+
+    @staticmethod
+    def _remove_stale_natural_variant(response: dict, history: list) -> None:
+        natural_variant = response.get("natural_variant")
+        if not isinstance(natural_variant, str) or not natural_variant.strip():
+            return
+
+        normalized_variant = " ".join(natural_variant.split()).casefold()
+        for message in history:
+            candidates = [
+                getattr(message, "text", None),
+                getattr(message, "corrected_text", None),
+            ]
+            for candidate in candidates:
+                if not isinstance(candidate, str) or not candidate.strip():
+                    continue
+                if normalized_variant == " ".join(candidate.split()).casefold():
+                    response["natural_variant"] = None
+                    return

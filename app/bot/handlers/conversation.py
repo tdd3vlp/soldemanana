@@ -95,6 +95,13 @@ async def handle_conversation_message(
         )
         return
 
+    if _is_too_short_spanish_answer(message.text):
+        await message.answer(
+            "Попробуй ответить чуть подробнее на испанском: одной полной фразой. "
+            "Так ты лучше тренируешь грамматику и активную лексику."
+        )
+        return
+
     user_service = UserService(session)
     await user_service.increment_message_count(db_user)
 
@@ -182,6 +189,9 @@ def _is_likely_english(text: str | None) -> bool:
     if any(char in text.lower() for char in "áéíóúüñ¿¡"):
         return False
 
+    if _looks_like_english_title_or_name(text):
+        return False
+
     words = re.findall(r"[a-z]+(?:'[a-z]+)?", text.lower())
     if not words:
         return False
@@ -204,6 +214,9 @@ def _is_likely_english(text: str | None) -> bool:
         "know",
         "my",
         "need",
+        "ok",
+        "okay",
+        "overall",
         "please",
         "say",
         "thanks",
@@ -217,9 +230,65 @@ def _is_likely_english(text: str | None) -> bool:
         "with",
         "you",
         "your",
+        "yes",
     }
     marker_count = sum(word in english_markers for word in words)
     return marker_count >= 2 or (len(words) <= 3 and marker_count >= 1)
+
+
+def _looks_like_english_title_or_name(text: str) -> bool:
+    words = re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", text.strip())
+    if len(words) < 2 or len(words) > 8:
+        return False
+
+    lower_words = [word.lower() for word in words]
+    title_helpers = {"a", "an", "and", "of", "the", "to"}
+    capitalized = [
+        word
+        for word in words
+        if word[0].isupper() and word.lower() not in title_helpers
+    ]
+    if not capitalized:
+        return False
+
+    non_title_words = [
+        word
+        for word in words
+        if not word[0].isupper() and word.lower() not in title_helpers
+    ]
+    if non_title_words:
+        return False
+
+    sentence_markers = {"am", "are", "can", "do", "does", "how", "what", "where", "you"}
+    return not any(word in sentence_markers for word in lower_words)
+
+
+def _is_too_short_spanish_answer(text: str | None) -> bool:
+    if not text or _contains_cyrillic(text):
+        return False
+    if _looks_like_english_title_or_name(text):
+        return False
+
+    words = re.findall(r"[a-záéíóúüñ]+", text.lower())
+    if not words or len(words) > 2:
+        return False
+
+    insufficient_words = {
+        "bien",
+        "claro",
+        "mal",
+        "mucho",
+        "muy",
+        "no",
+        "poco",
+        "regular",
+        "si",
+        "sí",
+        "tambien",
+        "también",
+        "vale",
+    }
+    return all(word in insufficient_words for word in words)
 
 
 def _build_russian_input_translation(text: str, natural_variant: str) -> str:

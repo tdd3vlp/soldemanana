@@ -113,6 +113,9 @@ class UserService:
             limit=limit or settings.dialog_history_size,
             scenario_id=scenario_id,
         )
+        return self.build_compact_messages(history)
+
+    def build_compact_messages(self, history: list[Message]) -> list[dict]:
         compact_messages = []
         for msg in history:
             role = "user" if msg.role == MessageRole.USER else "assistant"

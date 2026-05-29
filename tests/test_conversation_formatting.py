@@ -4,6 +4,7 @@ from app.bot.handlers.conversation import (
     _contains_cyrillic,
     _is_likely_english,
     _is_likely_gibberish,
+    _is_too_short_spanish_answer,
 )
 
 
@@ -52,8 +53,22 @@ def test_build_russian_input_translation() -> None:
 def test_is_likely_english_blocks_english_without_blocking_spanish_or_russian() -> None:
     assert _is_likely_english("I am from Russia but want to go to Spain") is True
     assert _is_likely_english("How can I say this?") is True
+    assert _is_likely_english("Overall") is True
     assert _is_likely_english("Estoy de Rusia, pero quiero ir a Espana") is False
     assert _is_likely_english("Я хочу сказать это по-испански") is False
+
+
+def test_is_likely_english_allows_titles_and_names() -> None:
+    assert _is_likely_english("The Beatles") is False
+    assert _is_likely_english("Bohemian Rhapsody") is False
+    assert _is_likely_english("I Want to Break Free") is False
+
+
+def test_is_too_short_spanish_answer_detects_insufficient_replies() -> None:
+    assert _is_too_short_spanish_answer("Si, muy") is True
+    assert _is_too_short_spanish_answer("Sí") is True
+    assert _is_too_short_spanish_answer("Toco la guitarra") is False
+    assert _is_too_short_spanish_answer("Играл на гитаре") is False
 
 
 def test_is_likely_gibberish_blocks_keyboard_mash_and_numbers() -> None:
