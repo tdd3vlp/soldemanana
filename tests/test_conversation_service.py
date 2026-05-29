@@ -67,6 +67,20 @@ def test_remove_repeated_correction_reply() -> None:
     assert response["reply_translation"] is None
 
 
+def test_ensure_conversation_reply_adds_fallback_after_repeated_reply_removed() -> None:
+    response = {
+        "natural_variant": "Hola, ¿cómo estás?",
+        "reply": "Hola, ¿cómo estás?",
+        "reply_translation": "Привет, как дела?",
+    }
+
+    ConversationService._remove_repeated_correction_reply(response)
+    ConversationService._ensure_conversation_reply(response)
+
+    assert response["reply"] == "Estoy bien, gracias. ¿Qué tal tu día?"
+    assert response["reply_translation"] == "Я хорошо, спасибо. Как проходит твой день?"
+
+
 def test_normalize_response_spanish_punctuation() -> None:
     response = {
         "natural_variant": "Mi día es perfecto, y tú?",

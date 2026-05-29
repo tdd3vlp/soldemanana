@@ -83,6 +83,7 @@ class ConversationService:
             self._keep_current_message_corrections(response, text)
             self._remove_stale_natural_variant(response, history)
             self._remove_repeated_correction_reply(response)
+            self._ensure_conversation_reply(response)
 
             await self.user_service.save_message(
                 user=user,
@@ -180,6 +181,15 @@ class ConversationService:
 
         response["reply"] = ""
         response["reply_translation"] = None
+
+    @staticmethod
+    def _ensure_conversation_reply(response: dict) -> None:
+        reply = response.get("reply")
+        if isinstance(reply, str) and reply.strip():
+            return
+
+        response["reply"] = "Estoy bien, gracias. ¿Qué tal tu día?"
+        response["reply_translation"] = "Я хорошо, спасибо. Как проходит твой день?"
 
     @classmethod
     def _normalize_response_spanish_punctuation(cls, response: dict) -> None:

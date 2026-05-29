@@ -180,7 +180,56 @@ def _is_gibberish_word(word: str) -> bool:
         vowels = sum(char in "aeiouy" for char in word)
         return vowels / len(word) < 0.2
 
+    if re.fullmatch(r"[а-яё]+", word):
+        return _looks_like_wrong_keyboard_layout_word(word)
+
     return False
+
+
+def _looks_like_wrong_keyboard_layout_word(word: str) -> bool:
+    keyboard_map = str.maketrans(
+        {
+            "й": "q",
+            "ц": "w",
+            "у": "e",
+            "к": "r",
+            "е": "t",
+            "н": "y",
+            "г": "u",
+            "ш": "i",
+            "щ": "o",
+            "з": "p",
+            "х": "[",
+            "ъ": "]",
+            "ф": "a",
+            "ы": "s",
+            "в": "d",
+            "а": "f",
+            "п": "g",
+            "р": "h",
+            "о": "j",
+            "л": "k",
+            "д": "l",
+            "ж": ";",
+            "э": "'",
+            "я": "z",
+            "ч": "x",
+            "с": "c",
+            "м": "v",
+            "и": "b",
+            "т": "n",
+            "ь": "m",
+            "б": ",",
+            "ю": ".",
+            "ё": "`",
+        }
+    )
+    latin = word.translate(keyboard_map)
+    if not re.fullmatch(r"[a-z]+", latin):
+        return False
+
+    vowels = sum(char in "aeiouy" for char in latin)
+    return vowels >= 2 and vowels / len(latin) >= 0.25
 
 
 def _is_likely_english(text: str | None) -> bool:
