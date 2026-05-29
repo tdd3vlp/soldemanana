@@ -49,6 +49,26 @@ def test_build_inline_corrections_uses_punctuated_natural_variant() -> None:
     assert result == "Hola, <s>coma</s> ¿cómo <s>esta</s> estás?"
 
 
+def test_build_inline_corrections_does_not_strike_same_word_with_punctuation() -> None:
+    result = _build_inline_corrections(
+        "No tieno planes para hoy",
+        [{"original": "tieno", "corrected": "tengo"}],
+        "No tengo planes para hoy.",
+    )
+
+    assert result == "No <s>tieno</s> tengo planes para hoy."
+
+
+def test_build_inline_corrections_marks_missing_opening_exclamation() -> None:
+    result = _build_inline_corrections(
+        "Bien, gracias!",
+        [{"original": "Bien, gracias!", "corrected": "¡Bien, gracias!"}],
+        "¡Bien, gracias!",
+    )
+
+    assert result == "<s>Bien</s> ¡Bien, gracias!"
+
+
 def test_contains_cyrillic_detects_russian_input() -> None:
     assert _contains_cyrillic("Я хочу сказать это по-испански") is True
     assert _contains_cyrillic("Estoy aprendiendo español") is False

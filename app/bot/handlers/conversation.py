@@ -390,6 +390,9 @@ def _format_changed_word(original: str, corrected: str) -> str:
     original_core, original_suffix = _split_trailing_punctuation(original)
     corrected_core, corrected_suffix = _split_trailing_punctuation(corrected)
 
+    if original_core == corrected_core:
+        return escape(corrected)
+
     if original_suffix == corrected_suffix and original_core and corrected_core:
         return f"<s>{escape(original_core)}</s> {escape(corrected_core + corrected_suffix)}"
 

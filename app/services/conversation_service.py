@@ -109,6 +109,7 @@ class ConversationService:
             )
             self._normalize_response_spanish_punctuation(response)
             self._keep_current_message_corrections(response, text)
+            self._ensure_punctuation_natural_variant(response, text)
             self._ensure_natural_variant(response, text)
             self._remove_stale_natural_variant(response, history)
             self._remove_repeated_correction_reply(response)
@@ -268,6 +269,30 @@ class ConversationService:
             response["natural_variant"] = ConversationService._normalize_spanish_punctuation(
                 corrected_text
             )
+
+    @staticmethod
+    def _ensure_punctuation_natural_variant(response: dict, text: str) -> None:
+        natural_variant = response.get("natural_variant")
+        if isinstance(natural_variant, str) and natural_variant.strip():
+            return
+
+        normalized_text = ConversationService._normalize_spanish_punctuation(text)
+        if normalized_text == text:
+            return
+
+        response["has_errors"] = True
+        response["natural_variant"] = normalized_text
+        corrections = response.get("corrections")
+        if not isinstance(corrections, list):
+            response["corrections"] = []
+        response["corrections"].append(
+            {
+                "original": text,
+                "corrected": normalized_text,
+                "error_type": "punctuation",
+                "explanation": "В испанском вопросительные и восклицательные фразы пишутся с парными знаками.",
+            }
+        )
 
     @staticmethod
     def _normalize_spanish_punctuation(text: str, infer_questions: bool = True) -> str:

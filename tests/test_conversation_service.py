@@ -96,6 +96,26 @@ def test_ensure_natural_variant_reconstructs_question_from_word_corrections() ->
     assert response["natural_variant"] == "Hola, ¿cómo estás?"
 
 
+def test_ensure_punctuation_natural_variant_adds_opening_exclamation() -> None:
+    response = {"has_errors": False, "corrections": [], "natural_variant": None}
+
+    ConversationService._ensure_punctuation_natural_variant(response, "Bien, gracias!")
+
+    assert response["has_errors"] is True
+    assert response["natural_variant"] == "¡Bien, gracias!"
+    assert response["corrections"] == [
+        {
+            "original": "Bien, gracias!",
+            "corrected": "¡Bien, gracias!",
+            "error_type": "punctuation",
+            "explanation": (
+                "В испанском вопросительные и восклицательные фразы пишутся "
+                "с парными знаками."
+            ),
+        }
+    ]
+
+
 def test_normalize_response_spanish_punctuation() -> None:
     response = {
         "natural_variant": "Mi día es perfecto, y tú?",
