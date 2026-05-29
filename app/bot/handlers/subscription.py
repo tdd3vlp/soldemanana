@@ -1,9 +1,9 @@
-from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.context import FSMContext
+from aiogram import F, Router
+from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import get_subscription_keyboard
+from app.bot.keyboards import get_subscription_keyboard, get_subscription_webapp_keyboard
+from app.config import settings
 from app.core.models.user import User
 from app.infrastructure.payments import YooKassaService
 
@@ -12,6 +12,15 @@ router = Router()
 
 @router.message(F.text.in_(["/subscribe", "💎 Подписка"]))
 async def cmd_subscribe(message: Message, db_user: User) -> None:
+    web_app_url = settings.subscription_web_app_url
+    if web_app_url:
+        await message.answer(
+            "💎 <b>Тарифы Habla Bot</b>\n\n"
+            "Открой витрину подписок, чтобы посмотреть FREE, BASIC и PREMIUM в удобном окне.",
+            reply_markup=get_subscription_webapp_keyboard(web_app_url),
+        )
+        return
+
     tier = db_user.subscription_tier
     messages_left = max(0, 10 - db_user.messages_today) if tier == "free" else "∞"
     
@@ -26,7 +35,7 @@ async def cmd_subscribe(message: Message, db_user: User) -> None:
             subscription_info +
             "<b>🆓 FREE план</b>\n"
             "• 10 сообщений в день\n"
-            "• Все режимы доступны\n"
+            "• Свободный разговор\n"
             "• Базовый функционал\n\n"
             "<b>⭐ PREMIUM</b> — 599₽/месяц\n"
             "• Безлимитные сообщения\n"
@@ -74,7 +83,7 @@ async def show_subscription_from_settings(callback: CallbackQuery, db_user: User
             subscription_info +
             "<b>🆓 FREE план</b>\n"
             "• 10 сообщений в день\n"
-            "• Все режимы доступны\n"
+            "• Свободный разговор\n"
             "• Базовый функционал\n\n"
             "<b>⭐ PREMIUM</b> — 599₽/месяц\n"
             "• Безлимитные сообщения\n"

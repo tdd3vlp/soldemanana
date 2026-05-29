@@ -1,12 +1,17 @@
-from app.bot.handlers import start, menu, conversation, correction, scenarios, grammar, subscription, admin
+from app.bot.handlers import (
+    admin,
+    conversation,
+    fallback,
+    menu,
+    start,
+    subscription,
+)
 
 __all__ = [
     "start",
     "menu",
     "conversation",
-    "correction",
-    "scenarios",
-    "grammar",
     "subscription",
     "admin",
+    "fallback",
 ]

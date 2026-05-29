@@ -1,5 +1,5 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     webhook_path: str = "/webhook/bot"
     webhook_secret: str = ""
 
+    web_app_base_url: str = ""
+    subscription_web_app_path: str = "/subscription"
+
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
@@ -59,6 +62,14 @@ class Settings(BaseSettings):
             import json
             return json.loads(v)
         return [int(x.strip()) for x in v.split(",") if x.strip()]
+
+    @computed_field
+    @property
+    def subscription_web_app_url(self) -> str:
+        base_url = self.web_app_base_url or self.webhook_url
+        if not base_url:
+            return ""
+        return f"{base_url.rstrip('/')}{self.subscription_web_app_path}"
 
 
 settings = Settings()

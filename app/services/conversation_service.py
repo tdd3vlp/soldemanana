@@ -1,16 +1,17 @@
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.models.user import User
+
+from app.config import settings
 from app.core.enums import BotMode, MessageRole
+from app.core.models.user import User
 from app.infrastructure.llm import (
     LLMTask,
     build_memory_summary_prompt,
     build_system_prompt,
     llm_client,
 )
-from app.services.user_service import UserService
 from app.services.ai_usage_service import AIUsageService
-from app.config import settings
+from app.services.user_service import UserService
 
 logger = structlog.get_logger()
 
@@ -55,6 +56,8 @@ class ConversationService:
                 BotMode.CONVERSATION.value,
                 response.get("_llm_usage"),
             )
+            self._keep_current_message_corrections(response, text)
+            self._remove_repeated_correction_reply(response)
 
             await self.user_service.save_message(
                 user=user,
@@ -115,3 +118,40 @@ class ConversationService:
             )
         except Exception as e:
             logger.warning("Memory summary skipped", error=str(e), user_id=user.id)
+
+    @classmethod
+    def _keep_current_message_corrections(cls, response: dict, text: str) -> None:
+        corrections = response.get("corrections")
+        if not isinstance(corrections, list):
+            return
+
+        filtered = [
+            correction
+            for correction in corrections
+            if cls._correction_belongs_to_text(correction, text)
+        ]
+        response["corrections"] = filtered
+        response["has_errors"] = bool(filtered)
+
+    @staticmethod
+    def _correction_belongs_to_text(correction: dict, text: str) -> bool:
+        original = correction.get("original") if isinstance(correction, dict) else None
+        if not isinstance(original, str) or not original.strip():
+            return False
+
+        normalized_original = " ".join(original.split()).casefold()
+        normalized_text = " ".join(text.split()).casefold()
+        return normalized_original in normalized_text
+
+    @staticmethod
+    def _remove_repeated_correction_reply(response: dict) -> None:
+        reply = response.get("reply")
+        natural_variant = response.get("natural_variant")
+        if not isinstance(reply, str) or not isinstance(natural_variant, str):
+            return
+
+        if " ".join(reply.split()).casefold() != " ".join(natural_variant.split()).casefold():
+            return
+
+        response["reply"] = ""
+        response["reply_translation"] = None

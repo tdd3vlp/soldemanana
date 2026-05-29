@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -12,6 +12,14 @@ def get_subscription_keyboard(tier: str = "free") -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if tier == "free":
         builder.button(text="⭐ Оформить PREMIUM", callback_data="sub:premium")
+    builder.button(text="◀️ Назад", callback_data="menu:main")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_subscription_webapp_keyboard(web_app_url: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="💎 Открыть тарифы", web_app=WebAppInfo(url=web_app_url))
     builder.button(text="◀️ Назад", callback_data="menu:main")
     builder.adjust(1)
     return builder.as_markup()

@@ -1,17 +1,21 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
-from app.core.constants import SCENARIO_LIST, GRAMMAR_TOPICS
+
+from app.core.constants import GRAMMAR_TOPICS, SCENARIO_LIST
 
 
 def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.button(text="🗣️ Свободный разговор")
-    builder.button(text="✏️ Исправить фразу")
-    builder.button(text="🎭 Ситуации в Испании")
-    builder.button(text="📚 Грамматика")
     builder.button(text="📖 Мой словарь")
     builder.button(text="⚙️ Настройки")
-    builder.adjust(2, 2, 2)
+    builder.adjust(1, 2)
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_exit_mode_keyboard() -> ReplyKeyboardMarkup:
+    builder = ReplyKeyboardBuilder()
+    builder.button(text="🏠 В главное меню")
     return builder.as_markup(resize_keyboard=True)
 
 
@@ -36,18 +40,9 @@ def get_grammar_topics_keyboard() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def get_exit_mode_keyboard() -> ReplyKeyboardMarkup:
-    builder = ReplyKeyboardBuilder()
-    builder.button(text="🏠 В главное меню")
-    return builder.as_markup(resize_keyboard=True)
-
-
 def get_settings_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="📊 Сменить уровень", callback_data="settings:level")
-    builder.button(text="🎯 Сменить цель", callback_data="settings:goal")
-    builder.button(text="✏️ Режим исправлений", callback_data="settings:correction")
     builder.button(text="💎 Подписка", callback_data="settings:subscription")
     builder.button(text="◀️ В главное меню", callback_data="menu:main")
-    builder.adjust(2, 1, 1, 1)
+    builder.adjust(1)
     return builder.as_markup()

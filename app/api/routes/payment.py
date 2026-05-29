@@ -1,13 +1,12 @@
-from fastapi import APIRouter, Request, HTTPException
-from sqlalchemy import select
 from datetime import datetime, timedelta
-import structlog
-import json
 
-from app.core.database import sessionmaker
-from app.core.models.user import User
+import structlog
+from fastapi import APIRouter, HTTPException, Request
+from sqlalchemy import select
+
 from app.core.models.subscription import Subscription
-from app.infrastructure.payments import YooKassaService
+from app.core.models.user import User
+from app.infrastructure.database import AsyncSessionFactory
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -29,7 +28,7 @@ async def yookassa_webhook(request: Request):
                 logger.warning("No telegram_id in payment metadata", payment_id=payment_id)
                 return {"status": "error", "message": "No telegram_id"}
             
-            async with sessionmaker() as db:
+            async with AsyncSessionFactory() as db:
                 result = await db.execute(
                     select(User).where(User.telegram_id == telegram_id)
                 )
