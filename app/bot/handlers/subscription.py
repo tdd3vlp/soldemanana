@@ -15,7 +15,7 @@ async def cmd_subscribe(message: Message, db_user: User) -> None:
     web_app_url = settings.subscription_web_app_url
     if web_app_url:
         await message.answer(
-            "💎 <b>Тарифы Habla Bot</b>\n\n"
+            "💎 <b>Тарифы Sol de Mañana</b>\n\n"
             "Открой витрину подписок, чтобы посмотреть FREE, BASIC и PREMIUM в удобном окне.",
             reply_markup=get_subscription_webapp_keyboard(web_app_url),
         )

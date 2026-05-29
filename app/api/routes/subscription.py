@@ -13,7 +13,7 @@ async def subscription_web_app() -> HTMLResponse:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Тарифы Habla Bot</title>
+  <title>Тарифы Sol de Mañana</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -283,7 +283,7 @@ async def subscription_web_app() -> HTMLResponse:
 <body>
   <main class="shell">
     <section class="hero">
-      <div class="brand"><span class="brand-mark"></span>Habla Bot</div>
+      <div class="brand"><span class="brand-mark"></span>Sol de Mañana</div>
       <h1>Выберите темп изучения испанского</h1>
       <p class="lead">
         Три понятных тарифа: начните бесплатно, прокачивайте привычку каждый день
