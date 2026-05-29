@@ -1,4 +1,6 @@
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,9 +13,6 @@ class MessageLimitMiddleware(BaseMiddleware):
     SKIP_TEXTS = {
         "🏠 В главное меню",
         "🗣️ Свободный разговор",
-        "✏️ Исправить фразу",
-        "🎭 Ситуации в Испании",
-        "📚 Грамматика",
         "📖 Мой словарь",
         "⚙️ Настройки",
     }

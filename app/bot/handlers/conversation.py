@@ -32,29 +32,36 @@ async def start_conversation(
         await message.answer(limit_service.get_limit_exceeded_text(db_user))
         return
 
+    await enter_conversation(message, state, db_user, is_new_user=False)
+
+
+async def enter_conversation(
+    message: Message,
+    state: FSMContext,
+    db_user: User,
+    is_new_user: bool = False,
+) -> None:
     await state.set_state(ConversationStates.active)
-    
+
     base_text = (
         "🗣️ <b>Режим свободного разговора</b>\n\n"
         "Пиши мне на испанском — о чём угодно! "
         "Я буду отвечать, исправлять ошибки и объяснять их.\n\n"
     )
-    
-    if db_user.level == "A0":
+
+    if is_new_user:
         starter_phrases = [
             "🇪🇸 <b>Hola, ¿cómo estás?</b>\n<i>(Привет, как дела?)</i>",
             "🇪🇸 <b>Me llamo [твоё имя]</b>\n<i>(Меня зовут [твоё имя])</i>",
-            "🇪🇸 <b>¿Qué tal tu día?</b>\n<i>(Как твой день?)</i>",
             "🇪🇸 <b>Estoy aprendiendo español</b>\n<i>(Я учу испанский)</i>",
-            "🇪🇸 <b>¿De dónde eres?</b>\n<i>(Откуда ты?)</i>",
         ]
         base_text += (
             "💡 <b>Выбери фразу для начала или напиши свою:</b>\n\n"
             + "\n\n".join(starter_phrases) + "\n\n"
         )
-    
+
     base_text += "Для выхода в меню нажми кнопку внизу 👇"
-    
+
     await message.answer(base_text, reply_markup=get_exit_mode_keyboard())
 
 

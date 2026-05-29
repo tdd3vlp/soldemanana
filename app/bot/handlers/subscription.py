@@ -1,6 +1,5 @@
-from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.context import FSMContext
+from aiogram import F, Router
+from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import get_subscription_keyboard
@@ -26,7 +25,7 @@ async def cmd_subscribe(message: Message, db_user: User) -> None:
             subscription_info +
             "<b>🆓 FREE план</b>\n"
             "• 10 сообщений в день\n"
-            "• Все режимы доступны\n"
+            "• Свободный разговор\n"
             "• Базовый функционал\n\n"
             "<b>⭐ PREMIUM</b> — 599₽/месяц\n"
             "• Безлимитные сообщения\n"
@@ -74,7 +73,7 @@ async def show_subscription_from_settings(callback: CallbackQuery, db_user: User
             subscription_info +
             "<b>🆓 FREE план</b>\n"
             "• 10 сообщений в день\n"
-            "• Все режимы доступны\n"
+            "• Свободный разговор\n"
             "• Базовый функционал\n\n"
             "<b>⭐ PREMIUM</b> — 599₽/месяц\n"
             "• Безлимитные сообщения\n"

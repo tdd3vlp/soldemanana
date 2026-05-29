@@ -42,11 +42,8 @@ def create_dispatcher(redis_url: str) -> Dispatcher:
 def _register_handlers(dp: Dispatcher) -> None:
     from app.bot.handlers import (
         conversation,
-        correction,
         fallback,
-        grammar,
         menu,
-        scenarios,
         start,
         subscription,
     )
@@ -55,7 +52,4 @@ def _register_handlers(dp: Dispatcher) -> None:
     dp.include_router(menu.router)
     dp.include_router(subscription.router)
     dp.include_router(conversation.router)
-    dp.include_router(correction.router)
-    dp.include_router(scenarios.router)
-    dp.include_router(grammar.router)
     dp.include_router(fallback.router)
