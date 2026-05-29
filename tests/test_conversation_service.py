@@ -3,6 +3,14 @@ from types import SimpleNamespace
 from app.services.conversation_service import ConversationService
 
 
+class FakeUsageService:
+    def __init__(self) -> None:
+        self.records = []
+
+    async def record(self, user, mode, meta) -> None:
+        self.records.append((user, mode, meta))
+
+
 def test_keep_current_message_corrections_drops_history_items() -> None:
     response = {
         "has_errors": True,
@@ -170,3 +178,40 @@ def test_remove_stale_natural_variant_from_history_corrected_text() -> None:
     ConversationService._remove_stale_natural_variant(response, history)
 
     assert response["natural_variant"] is None
+
+
+async def test_ensure_russian_input_translation_fills_missing_natural_variant(monkeypatch) -> None:
+    service = ConversationService.__new__(ConversationService)
+    service.usage_service = FakeUsageService()
+    user = SimpleNamespace(id=1)
+    response = {"natural_variant": None}
+
+    async def fake_complete(*args, **kwargs):
+        return {
+            "translation": "Quiero ir a España.",
+            "_llm_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        }
+
+    monkeypatch.setattr("app.services.conversation_service.llm_client.complete", fake_complete)
+
+    await service._ensure_russian_input_translation(response, "Я хочу поехать в Испанию", user)
+
+    assert response["natural_variant"] == "Quiero ir a España."
+    assert service.usage_service.records[0][1] == "conversation_translation"
+
+
+async def test_ensure_russian_input_translation_keeps_existing_natural_variant(monkeypatch) -> None:
+    service = ConversationService.__new__(ConversationService)
+    service.usage_service = FakeUsageService()
+    user = SimpleNamespace(id=1)
+    response = {"natural_variant": "Quiero ir a España."}
+
+    async def fake_complete(*args, **kwargs):
+        raise AssertionError("translation request should not be called")
+
+    monkeypatch.setattr("app.services.conversation_service.llm_client.complete", fake_complete)
+
+    await service._ensure_russian_input_translation(response, "Я хочу поехать в Испанию", user)
+
+    assert response["natural_variant"] == "Quiero ir a España."
+    assert service.usage_service.records == []

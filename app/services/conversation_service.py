@@ -107,11 +107,17 @@ class ConversationService:
                 BotMode.CONVERSATION.value,
                 response.get("_llm_usage"),
             )
+            is_russian_input = self._contains_cyrillic(text)
             self._normalize_response_spanish_punctuation(response)
             self._keep_current_message_corrections(response, text)
-            self._ensure_punctuation_natural_variant(response, text)
-            self._ensure_natural_variant(response, text)
-            self._remove_stale_natural_variant(response, history)
+            if is_russian_input:
+                response["has_errors"] = False
+                response["corrections"] = []
+            else:
+                self._ensure_punctuation_natural_variant(response, text)
+                self._ensure_natural_variant(response, text)
+                self._remove_stale_natural_variant(response, history)
+            await self._ensure_russian_input_translation(response, text, user)
             self._remove_repeated_correction_reply(response)
             self._ensure_conversation_reply(response)
             self._normalize_response_spanish_punctuation(response)
@@ -175,6 +181,53 @@ class ConversationService:
             )
         except Exception as e:
             logger.warning("Memory summary skipped", error=str(e), user_id=user.id)
+
+    async def _ensure_russian_input_translation(
+        self,
+        response: dict,
+        text: str,
+        user: User,
+    ) -> None:
+        if not self._contains_cyrillic(text):
+            return
+
+        natural_variant = response.get("natural_variant")
+        if isinstance(natural_variant, str) and natural_variant.strip():
+            return
+
+        try:
+            translation = await llm_client.complete(
+                (
+                    "Translate the user's Russian phrase into natural Spanish from Spain. "
+                    "Return JSON only: {\"translation\":str}. "
+                    "Do not answer the phrase and do not add explanations."
+                ),
+                [{"role": "user", "content": text}],
+                temperature=0.1,
+                max_tokens=120,
+                task=LLMTask.CHAT,
+            )
+            await self.usage_service.record(
+                user,
+                f"{BotMode.CONVERSATION.value}_translation",
+                translation.get("_llm_usage"),
+            )
+        except Exception as e:
+            logger.warning("Russian input translation skipped", error=str(e), user_id=user.id)
+            return
+
+        translated_text = translation.get("translation")
+        if isinstance(translated_text, str) and translated_text.strip():
+            response["natural_variant"] = self._normalize_spanish_punctuation(
+                translated_text.strip()
+            )
+
+    @staticmethod
+    def _contains_cyrillic(text: str | None) -> bool:
+        return bool(
+            text
+            and any("а" <= char.lower() <= "я" or char.lower() == "ё" for char in text)
+        )
 
     @classmethod
     def _keep_current_message_corrections(cls, response: dict, text: str) -> None:
@@ -290,7 +343,10 @@ class ConversationService:
                 "original": text,
                 "corrected": normalized_text,
                 "error_type": "punctuation",
-                "explanation": "В испанском вопросительные и восклицательные фразы пишутся с парными знаками.",
+                "explanation": (
+                    "В испанском вопросительные и восклицательные фразы пишутся "
+                    "с парными знаками."
+                ),
             }
         )
 

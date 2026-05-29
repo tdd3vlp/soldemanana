@@ -89,8 +89,9 @@ def build_system_prompt(
             "the user's corrected sentence. "
             "If the latest phrase is a question, natural_variant must be a full Spanish question "
             "with both ¿ and ?. "
-            "If the latest user message is in Russian, translate or polish it into natural Spanish "
-            "in natural_variant, set has_errors=false and corrections=[], then continue in reply. "
+            "If the latest user message contains Russian/Cyrillic, natural_variant is required: "
+            "translate the user's exact latest phrase into natural Spanish from Spain, "
+            "set has_errors=false and corrections=[], then continue in Spanish in reply. "
             "reply_translation must be Russian. "
             "Translation only for A0-A2 or hard words."
         )
