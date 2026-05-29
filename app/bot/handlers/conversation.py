@@ -131,11 +131,6 @@ async def handle_conversation_message(
     if is_russian_input and response.get("natural_variant"):
         parts.append(_build_russian_input_translation(message.text, response["natural_variant"]))
         parts.append("")
-    elif response.get("natural_variant"):
-        parts.append(
-            f"💬 <b>Естественный вариант:</b>\n"
-            f"<code>{response['natural_variant']}</code>\n"
-        )
 
     bot_reply = response.get("reply", "")
     if bot_reply:
