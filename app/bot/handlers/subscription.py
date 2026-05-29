@@ -2,7 +2,8 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import get_subscription_keyboard
+from app.bot.keyboards import get_subscription_keyboard, get_subscription_webapp_keyboard
+from app.config import settings
 from app.core.models.user import User
 from app.infrastructure.payments import YooKassaService
 
@@ -11,6 +12,15 @@ router = Router()
 
 @router.message(F.text.in_(["/subscribe", "💎 Подписка"]))
 async def cmd_subscribe(message: Message, db_user: User) -> None:
+    web_app_url = settings.subscription_web_app_url
+    if web_app_url:
+        await message.answer(
+            "💎 <b>Тарифы Habla Bot</b>\n\n"
+            "Открой витрину подписок, чтобы посмотреть FREE, BASIC и PREMIUM в удобном окне.",
+            reply_markup=get_subscription_webapp_keyboard(web_app_url),
+        )
+        return
+
     tier = db_user.subscription_tier
     messages_left = max(0, 10 - db_user.messages_today) if tier == "free" else "∞"
     

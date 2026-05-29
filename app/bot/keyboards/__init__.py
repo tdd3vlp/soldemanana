@@ -2,6 +2,7 @@ from app.bot.keyboards.inline import (
     get_grammar_next_keyboard,
     get_save_word_keyboard,
     get_subscription_keyboard,
+    get_subscription_webapp_keyboard,
 )
 from app.bot.keyboards.main_menu import (
     get_exit_mode_keyboard,
@@ -27,5 +28,6 @@ __all__ = [
     "get_settings_keyboard",
     "get_save_word_keyboard",
     "get_subscription_keyboard",
+    "get_subscription_webapp_keyboard",
     "get_grammar_next_keyboard",
 ]
