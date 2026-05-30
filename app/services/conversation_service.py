@@ -275,7 +275,19 @@ class ConversationService:
 
         normalized_original = " ".join(original.split()).casefold()
         normalized_text = " ".join(text.split()).casefold()
-        return normalized_original in normalized_text
+        if normalized_original not in normalized_text:
+            return False
+
+        # Filter out corrections that only add ¿/¡ when the opener is already
+        # present in the text (possibly followed by a space — "¿ Y" is valid).
+        corrected = correction.get("corrected")
+        if isinstance(corrected, str) and corrected and corrected[0] in "¿¡":
+            normalized_corrected = " ".join(corrected.split()).casefold()
+            collapsed = re.sub(r"([¿¡])\s+", r"\1", normalized_text)
+            if normalized_corrected in collapsed:
+                return False
+
+        return True
 
     @staticmethod
     def _remove_repeated_correction_reply(response: dict) -> None:
@@ -397,6 +409,16 @@ class ConversationService:
             corrected = correction.get("corrected", "") if isinstance(correction, dict) else ""
             if not original or not corrected or original.casefold() == corrected.casefold():
                 continue
+            # Skip if correction adds ¿/¡ and opener is already present before the target
+            if corrected and corrected[0] in "¿¡":
+                opener = corrected[0]
+                already_preceded = re.search(
+                    re.escape(opener) + r"\s*\b" + re.escape(original) + r"\b",
+                    result,
+                    flags=re.IGNORECASE,
+                )
+                if already_preceded:
+                    continue
             pattern = r"\b" + re.escape(original) + r"\b"
             try:
                 result = re.sub(pattern, corrected, result, flags=re.IGNORECASE)
