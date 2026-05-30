@@ -72,7 +72,8 @@ async def handle_conversation_message(
     db_user: User,
     session: AsyncSession,
 ) -> None:
-    if message.text == "🏠 В главное меню":
+    if not message.text:
+        await message.answer("Пиши текстом — фото и стикеры я пока не понимаю.")
         return
 
     if _is_likely_gibberish(message.text):
@@ -87,9 +88,6 @@ async def handle_conversation_message(
         await message.answer(SHORT_ANSWER_TEXT)
         return
 
-    user_service = UserService(session)
-    await user_service.increment_message_count(db_user)
-
     conversation_service = ConversationService(session)
     typing_action = message.bot.send_chat_action(message.chat.id, "typing")
     await typing_action
@@ -99,6 +97,9 @@ async def handle_conversation_message(
     if response.get("error"):
         await message.answer(response.get("message", "Ошибка обработки."))
         return
+
+    user_service = UserService(session)
+    await user_service.increment_message_count(db_user)
 
     parts = []
     is_russian_input = _contains_cyrillic(message.text)
@@ -119,7 +120,7 @@ async def handle_conversation_message(
 
     bot_reply = response.get("reply", "")
     if bot_reply:
-        parts.append(f"🇪🇸 {bot_reply}")
+        parts.append(f"🇪🇸 {escape(bot_reply)}")
 
     reply_markup = None
     reply_translation = response.get("reply_translation")
@@ -195,9 +196,20 @@ def _is_gibberish_word(word: str) -> bool:
         return vowels / len(word) < 0.2
 
     if re.fullmatch(r"[а-яё]+", word):
-        return _looks_like_wrong_keyboard_layout_word(word)
+        return _looks_like_wrong_keyboard_layout_word(word) or _looks_like_cyrillic_mash(word)
 
     return False
+
+
+def _looks_like_cyrillic_mash(word: str) -> bool:
+    if len(word) < 5:
+        return False
+
+    russian_vowels = sum(char in "аеёиоуыэюя" for char in word)
+    if russian_vowels / len(word) < 0.2:
+        return True
+
+    return len(set(word)) <= 3 and word[:2] == word[-2:]
 
 
 def _looks_like_wrong_keyboard_layout_word(word: str) -> bool:
@@ -243,10 +255,7 @@ def _looks_like_wrong_keyboard_layout_word(word: str) -> bool:
         return False
 
     vowels = sum(char in "aeiouy" for char in latin)
-    if vowels >= 2 and vowels / len(latin) >= 0.25:
-        return True
-
-    return len(latin) >= 5 and vowels <= 1
+    return vowels >= 2 and vowels / len(latin) >= 0.25
 
 
 def _is_likely_english(text: str | None) -> bool:
@@ -340,7 +349,7 @@ def _is_too_short_spanish_answer(text: str | None) -> bool:
         return False
     if any(word in _SPANISH_QUESTION_WORDS for word in words) or "por qué" in text.lower():
         return False
-    if all(word in _SPANISH_GREETING_WORDS for word in words):
+    if all(word in _SPANISH_ALLOWED_SHORT_PHRASE_WORDS for word in words):
         return False
     if len(words) == 1:
         return True
@@ -401,13 +410,25 @@ _SPANISH_QUESTION_WORDS = {
 }
 
 
-_SPANISH_GREETING_WORDS = {
+_SPANISH_ALLOWED_SHORT_PHRASE_WORDS = {
+    "adios",
+    "adiós",
     "buenas",
     "buenos",
+    "chao",
     "dias",
     "días",
+    "favor",
+    "gracias",
     "hola",
+    "lo",
     "noches",
+    "no",
+    "perdon",
+    "perdón",
+    "por",
+    "si",
+    "sí",
     "tardes",
 }
 

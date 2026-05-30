@@ -3,6 +3,7 @@ from app.infrastructure.llm.prompts import (
     build_memory_summary_prompt,
     build_system_prompt,
 )
+from app.infrastructure.llm.schemas import ConversationLLMResponse, MemorySummaryLLMResponse
 
 __all__ = [
     "LLMClient",
@@ -10,4 +11,6 @@ __all__ = [
     "llm_client",
     "build_system_prompt",
     "build_memory_summary_prompt",
+    "ConversationLLMResponse",
+    "MemorySummaryLLMResponse",
 ]

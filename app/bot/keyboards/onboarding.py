@@ -24,6 +24,5 @@ def get_correction_intensity_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="✅ Исправлять всё", callback_data="intensity:all")
     builder.button(text="⚖️ Только важные ошибки", callback_data="intensity:important")
-    builder.button(text="🗣️ Не исправлять, просто разговор", callback_data="intensity:none")
     builder.adjust(1)
     return builder.as_markup()

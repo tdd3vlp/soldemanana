@@ -24,7 +24,6 @@ class BotMode(StrEnum):
 class CorrectionIntensity(StrEnum):
     ALL = "all"
     IMPORTANT = "important"
-    NONE = "none"
 
 
 class SubscriptionTier(StrEnum):

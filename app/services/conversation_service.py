@@ -1,13 +1,16 @@
 import re
 
 import structlog
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.enums import BotMode, MessageRole
 from app.core.models.user import User
 from app.infrastructure.llm import (
+    ConversationLLMResponse,
     LLMTask,
+    MemorySummaryLLMResponse,
     build_memory_summary_prompt,
     build_system_prompt,
     llm_client,
@@ -84,14 +87,14 @@ class ConversationService:
         messages.append({"role": "user", "content": text})
 
         try:
-            response = await llm_client.complete(
+            raw = await llm_client.complete(
                 system_prompt,
                 messages,
                 temperature=0.4,
                 task=LLMTask.CHAT,
             )
-            if "error" in response:
-                logger.error("LLM response error", response=response)
+            if "error" in raw:
+                logger.error("LLM response error", response=raw)
                 return {
                     "error": True,
                     "message": (
@@ -103,8 +106,20 @@ class ConversationService:
             await self.usage_service.record(
                 user,
                 BotMode.CONVERSATION.value,
-                response.get("_llm_usage"),
+                raw.get("_llm_usage"),
             )
+            try:
+                response = ConversationLLMResponse.model_validate(raw).model_dump()
+            except ValidationError as exc:
+                logger.error("LLM response validation failed", error=str(exc))
+                return {
+                    "error": True,
+                    "message": (
+                        "Извини, произошла ошибка "
+                        "при обработке сообщения. "
+                        "Попробуй ещё раз."
+                    ),
+                }
             is_russian_input = self._contains_cyrillic(text)
             self._normalize_response_spanish_punctuation(response)
             self._keep_current_message_corrections(response, text)
@@ -118,7 +133,7 @@ class ConversationService:
             await self._ensure_russian_input_translation(response, text, user)
             self._remove_repeated_correction_reply(response)
             self._ensure_conversation_reply(response)
-            self._ensure_reply_translation(response)
+            await self._ensure_reply_translation(response, user)
             self._normalize_response_spanish_punctuation(response)
 
             await self.user_service.save_message(
@@ -157,26 +172,31 @@ class ConversationService:
         history = await self.user_service.get_compact_dialog_history(
             user=user,
             mode=BotMode.CONVERSATION,
-            limit=settings.dialog_history_size,
+            limit=settings.memory_summary_interval,
         )
         if not history:
             return
 
         try:
-            response = await llm_client.complete(
+            raw = await llm_client.complete(
                 build_memory_summary_prompt(user.level or "A2", user.goal or "communication"),
                 history,
                 temperature=0.2,
                 task=LLMTask.SUMMARY,
             )
-            await self.usage_service.record(user, "summary", response.get("_llm_usage"))
+            await self.usage_service.record(user, "summary", raw.get("_llm_usage"))
+            try:
+                summary = MemorySummaryLLMResponse.model_validate(raw)
+            except ValidationError as exc:
+                logger.warning("Memory summary validation failed", error=str(exc), user_id=user.id)
+                return
             await self.user_service.update_learning_memory(
                 user,
-                memory_summary=response.get("memory_summary"),
-                mistake_summary=response.get("mistake_summary"),
-                active_topic=response.get("active_topic"),
-                learned_vocabulary=response.get("learned_vocabulary"),
-                recent_goals=response.get("recent_goals"),
+                memory_summary=summary.memory_summary,
+                mistake_summary=summary.mistake_summary,
+                active_topic=summary.active_topic,
+                learned_vocabulary=summary.learned_vocabulary,
+                recent_goals=summary.recent_goals,
             )
         except Exception as e:
             logger.warning("Memory summary skipped", error=str(e), user_id=user.id)
@@ -278,26 +298,39 @@ class ConversationService:
         response["reply"] = "Estoy bien, gracias. ¿Qué tal tu día?"
         response["reply_translation"] = "Я хорошо, спасибо. Как проходит твой день?"
 
-    @staticmethod
-    def _ensure_reply_translation(response: dict) -> None:
+    async def _ensure_reply_translation(self, response: dict, user: User) -> None:
         reply_translation = response.get("reply_translation")
         if isinstance(reply_translation, str) and reply_translation.strip():
             return
 
         reply = response.get("reply")
-        if not isinstance(reply, str):
+        if not isinstance(reply, str) or not reply.strip():
             return
 
-        translations = {
-            "¡hola! ¿cómo estás?": "Привет! Как дела?",
-            "hola, ¿cómo estás?": "Привет, как дела?",
-            "¿cómo estás?": "Как дела?",
-            "estoy bien, gracias. ¿qué tal tu día?": (
-                "Я хорошо, спасибо. Как проходит твой день?"
-            ),
-        }
-        normalized_reply = " ".join(reply.split()).casefold()
-        response["reply_translation"] = translations.get(normalized_reply)
+        try:
+            translation = await llm_client.complete(
+                (
+                    "Translate the Spanish assistant reply into natural Russian. "
+                    "Return JSON only: {\"translation\":str}. "
+                    "Do not add explanations."
+                ),
+                [{"role": "user", "content": reply.strip()}],
+                temperature=0.1,
+                max_tokens=160,
+                task=LLMTask.CHAT,
+            )
+            await self.usage_service.record(
+                user,
+                f"{BotMode.CONVERSATION.value}_reply_translation",
+                translation.get("_llm_usage"),
+            )
+        except Exception as e:
+            logger.warning("Reply translation skipped", error=str(e), user_id=user.id)
+            return
+
+        translated_text = translation.get("translation")
+        if isinstance(translated_text, str) and translated_text.strip():
+            response["reply_translation"] = translated_text.strip()
 
     @classmethod
     def _normalize_response_spanish_punctuation(cls, response: dict) -> None:

@@ -19,7 +19,6 @@ GOAL_CONTEXT = {
 INTENSITY_INSTRUCTION = {
     "all": "исправляй все ошибки",
     "important": "исправляй все ошибки",
-    "none": "не исправляй, просто отвечай",
 }
 
 BASE_RULES = (
