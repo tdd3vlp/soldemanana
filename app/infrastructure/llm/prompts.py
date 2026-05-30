@@ -1,3 +1,5 @@
+from app.core.conversation_rules import format_conversation_rules_for_prompt
+
 LEVEL_CONTEXT = {
     "A0": "новичок; очень простые фразы",
     "A1": "начинающий; базовая лексика",
@@ -16,7 +18,7 @@ GOAL_CONTEXT = {
 
 INTENSITY_INSTRUCTION = {
     "all": "исправляй все ошибки",
-    "important": "исправляй только важные ошибки",
+    "important": "исправляй все ошибки",
     "none": "не исправляй, просто отвечай",
 }
 
@@ -25,15 +27,14 @@ BASE_RULES = (
     "Отвечай кратко, естественно, без лекций. "
     "Испанский: Espana, vosotros. "
     "В испанском всегда ставь парные знаки: ¿...? для вопросов и ¡...! для восклицаний. "
-    "Объяснения ошибок на русском. "
     "Все переводы только на русский, никогда на английский. "
-    "Не больше 2 исправлений за раз. "
+    "Не объясняй ошибки в ответе пользователю. "
     "JSON only."
 )
 
 CONVERSATION_SCHEMA = (
     '{"has_errors":bool,"corrections":[{"original":str,"corrected":str,'
-    '"error_type":str,"explanation":str}],"natural_variant":str|null,'
+    '"error_type":str}],"natural_variant":str|null,'
     '"reply":str,"reply_translation":str|null}'
 )
 
@@ -60,14 +61,12 @@ def build_system_prompt(
 
     parts.append(
         "Mode: chat. Reply in Spanish with one short follow-up question. "
-        "Check and correct only the latest user message, never older history. "
+        f"Rules:\n{format_conversation_rules_for_prompt()}\n"
         "natural_variant must be only a correction/translation of the latest user message; "
         "when there are errors, natural_variant must contain the full corrected latest phrase. "
         "never copy previous corrected phrases from history. "
         "reply must continue the conversation, not repeat or paraphrase "
         "the user's corrected sentence. "
-        "If the latest phrase is a question, natural_variant must be a full Spanish question "
-        "with both ¿ and ?. "
         "If the latest user message contains Russian/Cyrillic, natural_variant is required: "
         "translate the user's exact latest phrase into natural Spanish from Spain, "
         "set has_errors=false and corrections=[], then continue in Spanish in reply. "

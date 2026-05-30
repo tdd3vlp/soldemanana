@@ -191,7 +191,11 @@ class ConversationService:
             return
 
         natural_variant = response.get("natural_variant")
-        if isinstance(natural_variant, str) and natural_variant.strip():
+        if (
+            isinstance(natural_variant, str)
+            and natural_variant.strip()
+            and not self._contains_cyrillic(natural_variant)
+        ):
             return
 
         try:
@@ -324,10 +328,6 @@ class ConversationService:
 
     @staticmethod
     def _ensure_punctuation_natural_variant(response: dict, text: str) -> None:
-        natural_variant = response.get("natural_variant")
-        if isinstance(natural_variant, str) and natural_variant.strip():
-            return
-
         normalized_text = ConversationService._normalize_spanish_punctuation(text)
         if normalized_text == text:
             return
@@ -342,10 +342,6 @@ class ConversationService:
                 "original": text,
                 "corrected": normalized_text,
                 "error_type": "punctuation",
-                "explanation": (
-                    "В испанском вопросительные и восклицательные фразы пишутся "
-                    "с парными знаками."
-                ),
             }
         )
 

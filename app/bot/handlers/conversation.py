@@ -8,6 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.keyboards import get_exit_mode_keyboard
 from app.bot.states import ConversationStates
+from app.core.conversation_rules import (
+    SHORT_ANSWER_TEXT,
+    UNCLEAR_MESSAGE_TEXT,
+    UNSUPPORTED_LANGUAGE_TEXT,
+)
 from app.core.models.user import User
 from app.services.conversation_service import ConversationService
 from app.services.user_service import UserService
@@ -40,7 +45,7 @@ async def enter_conversation(
     base_text = (
         "🗣️ <b>Режим свободного разговора</b>\n\n"
         "Пиши мне на испанском — о чём угодно! "
-        "Я буду отвечать, исправлять ошибки и объяснять их.\n\n"
+        "Я буду отвечать и помогать формулировать фразы естественно.\n\n"
     )
 
     if is_new_user:
@@ -70,24 +75,15 @@ async def handle_conversation_message(
         return
 
     if _is_likely_gibberish(message.text):
-        await message.answer(
-            "Не совсем понял, что ты хотел сказать. Напиши фразу ещё раз "
-            "на испанском или по-русски, если не знаешь, как сказать это по-испански."
-        )
+        await message.answer(UNCLEAR_MESSAGE_TEXT)
         return
 
     if _is_likely_english(message.text):
-        await message.answer(
-            "Пиши, пожалуйста, на испанском. Если не знаешь, как сказать фразу "
-            "по-испански, напиши её по-русски — я переведу и помогу продолжить."
-        )
+        await message.answer(UNSUPPORTED_LANGUAGE_TEXT)
         return
 
     if _is_too_short_spanish_answer(message.text):
-        await message.answer(
-            "Попробуй ответить чуть подробнее на испанском: одной полной фразой. "
-            "Так ты лучше тренируешь грамматику и активную лексику."
-        )
+        await message.answer(SHORT_ANSWER_TEXT)
         return
 
     user_service = UserService(session)
@@ -156,7 +152,7 @@ def _is_likely_gibberish(text: str | None) -> bool:
 
 
 def _is_gibberish_word(word: str) -> bool:
-    if len(word) < 5:
+    if len(word) < 4:
         return False
 
     if re.fullmatch(r"[a-z]+", word):
@@ -212,7 +208,10 @@ def _looks_like_wrong_keyboard_layout_word(word: str) -> bool:
         return False
 
     vowels = sum(char in "aeiouy" for char in latin)
-    return vowels >= 2 and vowels / len(latin) >= 0.25
+    if vowels >= 2 and vowels / len(latin) >= 0.25:
+        return True
+
+    return len(latin) >= 5 and vowels <= 1
 
 
 def _is_likely_english(text: str | None) -> bool:

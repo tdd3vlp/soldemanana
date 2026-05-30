@@ -19,6 +19,5 @@ class Correction(Base, TimestampMixin):
     error_type: Mapped[str] = mapped_column(String(64), nullable=False)
     original_fragment: Mapped[str] = mapped_column(Text, nullable=False)
     corrected_fragment: Mapped[str] = mapped_column(Text, nullable=False)
-    explanation_ru: Mapped[str] = mapped_column(Text, nullable=False)
 
     message: Mapped["Message"] = relationship(back_populates="corrections", lazy="noload")

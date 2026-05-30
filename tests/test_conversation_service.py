@@ -19,13 +19,11 @@ def test_keep_current_message_corrections_drops_history_items() -> None:
                 "original": "Rusía",
                 "corrected": "Rusia",
                 "error_type": "accent",
-                "explanation": "La forma correcta es Rusia.",
             },
             {
                 "original": "comó",
                 "corrected": "cómo",
                 "error_type": "accent",
-                "explanation": "Cómo lleva tilde en una pregunta.",
             },
         ],
     }
@@ -38,7 +36,6 @@ def test_keep_current_message_corrections_drops_history_items() -> None:
             "original": "Rusía",
             "corrected": "Rusia",
             "error_type": "accent",
-            "explanation": "La forma correcta es Rusia.",
         }
     ]
 
@@ -51,7 +48,6 @@ def test_keep_current_message_corrections_clears_has_errors_when_only_history_it
                 "original": "comó",
                 "corrected": "cómo",
                 "error_type": "accent",
-                "explanation": "Cómo lleva tilde en una pregunta.",
             },
         ],
     }
@@ -116,10 +112,6 @@ def test_ensure_punctuation_natural_variant_adds_opening_exclamation() -> None:
             "original": "Bien, gracias!",
             "corrected": "¡Bien, gracias!",
             "error_type": "punctuation",
-            "explanation": (
-                "В испанском вопросительные и восклицательные фразы пишутся "
-                "с парными знаками."
-            ),
         }
     ]
 
@@ -215,3 +207,24 @@ async def test_ensure_russian_input_translation_keeps_existing_natural_variant(m
 
     assert response["natural_variant"] == "Quiero ir a España."
     assert service.usage_service.records == []
+
+
+async def test_ensure_russian_input_translation_replaces_cyrillic_natural_variant(
+    monkeypatch,
+) -> None:
+    service = ConversationService.__new__(ConversationService)
+    service.usage_service = FakeUsageService()
+    user = SimpleNamespace(id=1)
+    response = {"natural_variant": "Ничего"}
+
+    async def fake_complete(*args, **kwargs):
+        return {
+            "translation": "Nada.",
+            "_llm_usage": {"prompt_tokens": 10, "completion_tokens": 3, "total_tokens": 13},
+        }
+
+    monkeypatch.setattr("app.services.conversation_service.llm_client.complete", fake_complete)
+
+    await service._ensure_russian_input_translation(response, "Ничего", user)
+
+    assert response["natural_variant"] == "Nada."
