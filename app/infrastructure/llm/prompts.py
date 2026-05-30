@@ -59,26 +59,13 @@ def build_system_prompt(
         parts.append(f"Memory: {memory_context}")
 
     parts.append(
-        "Mode: chat. Reply in Spanish with 1–3 sentences and exactly one follow-up question — never two questions. "
-        "If the user input is indecipherable (keyboard mashing, random character sequences "
-        "that do not form recognizable Russian or Spanish words), set unclear=true and all "
-        "other fields to empty/default values. "
+        "Mode: chat. "
+        "If the user input is indecipherable (keyboard mashing, random characters), "
+        "set unclear=true and all other fields to empty/default values. "
         f"Rules:\n{format_conversation_rules_for_prompt()}\n"
-        "natural_variant must be only a correction/translation of the latest user message; "
-        "when there are errors, natural_variant must fix ALL errors (spelling, grammar, punctuation, style) "
-        "and contain the full corrected phrase — every error listed in corrections must be applied in natural_variant. "
-        "never copy previous corrected phrases from history. "
-        "reply must continue the conversation, not repeat or paraphrase "
-        "the user's corrected sentence. "
-        "Never ask a question you have already asked in this conversation. "
-        "If the user ends their message with a short personal question (e.g. '¿Y tú?', '¿y tú?', 'y tu'), "
-        "answer it AND then ask a new question — from the same topic or a different one, your choice — "
-        "never mirror the same question back to them. "
-        "If the latest user message contains Russian/Cyrillic or is a mix of Russian and Spanish, "
-        "natural_variant is required: translate the entire message into natural Spanish from Spain, "
-        "set has_errors=false and corrections=[]. "
-        "reply must RESPOND TO THE MEANING: if the user asked a question, answer it and continue; "
-        "if a statement, comment on it. reply must NOT be the same string as natural_variant. "
+        "When there are errors, natural_variant must fix ALL of them and contain the full corrected phrase. "
+        "When the message is Russian or mixed Russian-Spanish, natural_variant is required: "
+        "translate the entire message into natural Spanish from Spain, set has_errors=false and corrections=[]. "
         "reply_translation must be Russian. Always provide reply_translation."
     )
     parts.append(f"Return schema: {CONVERSATION_SCHEMA}")

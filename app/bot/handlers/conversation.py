@@ -109,11 +109,13 @@ async def handle_conversation_message(
     is_russian_input = _contains_cyrillic(message.text)
 
     if response.get("has_errors") and response.get("corrections"):
-        corrections = response["corrections"]
-        parts.append(_build_inline_corrections(message.text, corrections))
-        natural_variant = response.get("natural_variant")
-        if len(corrections) > 5 and natural_variant:
-            parts.append(f"✅ <code>{escape(natural_variant)}</code>")
+        parts.append(
+            _build_inline_corrections(
+                message.text,
+                response["corrections"],
+                response.get("natural_variant"),
+            )
+        )
         parts.append("")
 
     if is_russian_input and response.get("natural_variant"):
@@ -458,29 +460,31 @@ def _build_inline_corrections(
     corrections: list[dict],
     natural_variant: str | None = None,
 ) -> str:
-    if natural_variant:
-        diff = _build_inline_replacement(text, natural_variant)
-        if diff:
-            return diff
+    corrected = natural_variant or _apply_corrections_to_text(text, corrections)
+    result = _build_underline_diff(text, corrected)
+    if result:
+        return result
+    # Word count differs: underline each corrected word in the corrected sentence
+    escaped = escape(corrected)
+    for correction in corrections:
+        corr_word = correction.get("corrected")
+        if corr_word:
+            esc = escape(str(corr_word))
+            escaped = escaped.replace(esc, f"<u>{esc}</u>", 1)
+    return escaped
 
-    result = escape(text)
 
+def _apply_corrections_to_text(text: str, corrections: list[dict]) -> str:
+    result = text
     for correction in corrections:
         original = correction.get("original")
         corrected = correction.get("corrected")
-        if not original or not corrected:
-            continue
-
-        escaped_original = escape(str(original))
-        replacement = _build_inline_replacement(str(original), str(corrected))
-        if not replacement:
-            replacement = f"<s>{escaped_original}</s> {escape(str(corrected))}"
-        result = result.replace(escaped_original, replacement, 1)
-
+        if original and corrected:
+            result = result.replace(str(original), str(corrected), 1)
     return result
 
 
-def _build_inline_replacement(original: str, corrected: str) -> str:
+def _build_underline_diff(original: str, corrected: str) -> str:
     original_words = original.split()
     corrected_words = corrected.split()
 
@@ -488,31 +492,10 @@ def _build_inline_replacement(original: str, corrected: str) -> str:
         return ""
 
     parts = []
-    for original_word, corrected_word in zip(original_words, corrected_words):
-        if original_word == corrected_word:
-            parts.append(escape(original_word))
+    for orig_word, corr_word in zip(original_words, corrected_words):
+        if orig_word == corr_word:
+            parts.append(escape(corr_word))
         else:
-            parts.append(_format_changed_word(original_word, corrected_word))
+            parts.append(f"<u>{escape(corr_word)}</u>")
 
     return " ".join(parts)
-
-
-def _format_changed_word(original: str, corrected: str) -> str:
-    original_core, original_suffix = _split_trailing_punctuation(original)
-    corrected_core, corrected_suffix = _split_trailing_punctuation(corrected)
-
-    if original_core == corrected_core:
-        return escape(corrected)
-
-    if original_suffix == corrected_suffix and original_core and corrected_core:
-        return f"<s>{escape(original_core)}</s> {escape(corrected_core + corrected_suffix)}"
-
-    return f"<s>{escape(original)}</s> {escape(corrected)}"
-
-
-def _split_trailing_punctuation(word: str) -> tuple[str, str]:
-    punctuation = ".,!?;:"
-    index = len(word)
-    while index > 0 and word[index - 1] in punctuation:
-        index -= 1
-    return word[:index], word[index:]

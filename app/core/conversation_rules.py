@@ -45,45 +45,30 @@ BOT_GUARD_RULES = (
 
 LLM_RESPONSE_RULES = (
     ConversationRule(
-        "latest_message_only",
+        "correct_spanish",
         (
-            "Correct all errors from the latest user message only. "
-            "Never include old corrections from history."
+            "Correct all errors in the latest Spanish message: spelling, grammar, "
+            "punctuation, accents, style. Correct only the latest message, never history."
         ),
     ),
     ConversationRule(
         "russian_to_spanish",
         (
-            "If the latest user message is Russian/Cyrillic or a mix of Russian and Spanish, "
-            "translate the entire message into natural Spanish from Spain, "
-            "do not mark it as an error, then continue the dialogue."
+            "If the message is Russian, Cyrillic, or a mix of Russian and Spanish, "
+            "translate the entire message into natural Spanish from Spain. "
+            "Do not mark it as an error."
         ),
     ),
     ConversationRule(
-        "spanish_punctuation",
-        "Track important Spanish punctuation, including paired ¿...? and ¡...! marks.",
+        "other_languages",
+        "If the message is in any other language, ask the user to write in Spanish or Russian.",
     ),
     ConversationRule(
-        "spanish_orthography",
+        "conversation_goal",
         (
-            "Correct every error in the latest message: spelling, grammar, punctuation, "
-            "style, word choice. Include written accents and diacritics (á, é, í, ó, ú, ü, ñ). "
-            "Pay special attention to words that change meaning with an accent: "
-            "si→sí (affirmative yes), mi→mí (pronoun me), tu→tú (pronoun you), "
-            "el→él (pronoun he), mas→más (more), se→sé (I know), te→té (tea)."
+            "Goal: continue the conversation — answer the user's questions, "
+            "ask your own questions, concisely correct their Spanish."
         ),
-    ),
-    ConversationRule(
-        "natural_reply",
-        (
-            "Reply with 1–3 sentences plus exactly one follow-up question. "
-            "Never include more than one question in a single reply. "
-            "Vary topics; do not drill into tiny details."
-        ),
-    ),
-    ConversationRule(
-        "no_explanations",
-        "Do not explain mistakes in chat responses; show only the correction/variant and continue.",
     ),
 )
 
