@@ -99,7 +99,6 @@ def test_is_likely_english_allows_titles_and_names() -> None:
 
 def test_is_too_short_spanish_answer_detects_insufficient_replies() -> None:
     assert _is_too_short_spanish_answer("Si, muy") is True
-    assert _is_too_short_spanish_answer("Sí") is True
     assert _is_too_short_spanish_answer("Me gusta") is True
     assert _is_too_short_spanish_answer("Me encanta") is True
     assert _is_too_short_spanish_answer("Paella") is True
@@ -107,6 +106,14 @@ def test_is_too_short_spanish_answer_detects_insufficient_replies() -> None:
     assert _is_too_short_spanish_answer("La comida italiana") is True
     assert _is_too_short_spanish_answer("Toco la guitarra") is False
     assert _is_too_short_spanish_answer("Играл на гитаре") is False
+
+
+def test_is_too_short_spanish_answer_allows_complete_short_replies() -> None:
+    assert _is_too_short_spanish_answer("Sí") is False
+    assert _is_too_short_spanish_answer("No") is False
+    assert _is_too_short_spanish_answer("Gracias") is False
+    assert _is_too_short_spanish_answer("Tengo hambre") is False
+    assert _is_too_short_spanish_answer("Quiero café") is False
 
 
 def test_is_too_short_spanish_answer_allows_greetings() -> None:
@@ -123,3 +130,15 @@ def test_is_likely_gibberish_blocks_keyboard_mash_and_numbers() -> None:
     assert _is_likely_gibberish("123456") is True
     assert _is_likely_gibberish("Estoy de Rusia") is False
     assert _is_likely_gibberish("Я хочу в Испанию") is False
+    assert _is_likely_gibberish("Привет!") is False
+
+
+def test_is_likely_gibberish_does_not_block_valid_russian_sentences() -> None:
+    assert _is_likely_gibberish("Иногда я готовлю другие блюда") is False
+    assert _is_likely_gibberish("Мне нравится испанская кухня") is False
+    assert _is_likely_gibberish("хочу сказать что иногда я готовлю другие блюда") is False
+
+
+def test_is_too_short_spanish_answer_allows_apology_forms() -> None:
+    assert _is_too_short_spanish_answer("Perdone") is False
+    assert _is_too_short_spanish_answer("Perdona") is False

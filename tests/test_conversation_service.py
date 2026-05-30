@@ -85,15 +85,47 @@ def test_ensure_conversation_reply_adds_fallback_after_repeated_reply_removed() 
     assert response["reply_translation"] == "Я хорошо, спасибо. Как проходит твой день?"
 
 
-def test_ensure_reply_translation_adds_greeting_fallback() -> None:
+async def test_ensure_reply_translation_keeps_existing_translation(monkeypatch) -> None:
+    service = ConversationService.__new__(ConversationService)
+    service.usage_service = FakeUsageService()
+    user = SimpleNamespace(id=1)
     response = {
         "reply": "¡Hola! ¿Cómo estás?",
+        "reply_translation": "Привет! Как дела?",
+    }
+
+    async def fake_complete(*args, **kwargs):
+        raise AssertionError("translation request should not be called")
+
+    monkeypatch.setattr("app.services.conversation_service.llm_client.complete", fake_complete)
+
+    await service._ensure_reply_translation(response, user)
+
+    assert response["reply_translation"] == "Привет! Как дела?"
+    assert service.usage_service.records == []
+
+
+async def test_ensure_reply_translation_fills_missing_translation(monkeypatch) -> None:
+    service = ConversationService.__new__(ConversationService)
+    service.usage_service = FakeUsageService()
+    user = SimpleNamespace(id=1)
+    response = {
+        "reply": "¡Hola! ¿Qué tal tu día?",
         "reply_translation": None,
     }
 
-    ConversationService._ensure_reply_translation(response)
+    async def fake_complete(*args, **kwargs):
+        return {
+            "translation": "Привет! Как проходит твой день?",
+            "_llm_usage": {"prompt_tokens": 8, "completion_tokens": 6, "total_tokens": 14},
+        }
 
-    assert response["reply_translation"] == "Привет! Как дела?"
+    monkeypatch.setattr("app.services.conversation_service.llm_client.complete", fake_complete)
+
+    await service._ensure_reply_translation(response, user)
+
+    assert response["reply_translation"] == "Привет! Как проходит твой день?"
+    assert service.usage_service.records[0][1] == "conversation_reply_translation"
 
 
 def test_ensure_natural_variant_reconstructs_question_from_word_corrections() -> None:

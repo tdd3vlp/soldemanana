@@ -166,6 +166,9 @@ def _contains_cyrillic(text: str | None) -> bool:
     return bool(text and any("а" <= char.lower() <= "я" or char.lower() == "ё" for char in text))
 
 
+_RUSSIAN_VOWELS = frozenset("аеёиоуыэюя")
+
+
 def _is_likely_gibberish(text: str | None) -> bool:
     if not text:
         return False
@@ -181,6 +184,14 @@ def _is_likely_gibberish(text: str | None) -> bool:
 
     words = re.findall(r"[a-zа-яёáéíóúüñ]+", normalized)
     if not words:
+        return False
+
+    # Two or more Cyrillic words with Russian vowels → valid Russian text
+    cyrillic_words_with_vowels = sum(
+        1 for w in words
+        if len(w) >= 4 and re.fullmatch(r"[а-яё]+", w) and any(c in _RUSSIAN_VOWELS for c in w)
+    )
+    if cyrillic_words_with_vowels >= 2:
         return False
 
     bad_words = sum(_is_gibberish_word(word) for word in words)
@@ -426,6 +437,8 @@ _SPANISH_ALLOWED_SHORT_PHRASE_WORDS = {
     "no",
     "perdon",
     "perdón",
+    "perdona",
+    "perdone",
     "por",
     "si",
     "sí",
