@@ -67,7 +67,10 @@ LLM_RESPONSE_RULES = (
         (
             "Correct Spanish orthography using grammar, vocabulary and context, including "
             "written accents and diacritics (á, é, í, ó, ú, ü, ñ). Treat missing or wrong "
-            "diacritics as errors when standard Spanish requires them."
+            "diacritics as errors when standard Spanish requires them. "
+            "Pay special attention to words that change meaning with an accent: "
+            "si→sí (affirmative yes), mi→mí (pronoun me), tu→tú (pronoun you), "
+            "el→él (pronoun he), mas→más (more), se→sé (I know), te→té (tea)."
         ),
     ),
     ConversationRule(

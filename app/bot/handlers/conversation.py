@@ -212,15 +212,39 @@ def _is_gibberish_word(word: str) -> bool:
     return False
 
 
+# Valid Russian word-initial 3-consonant clusters (exhaustive but compact).
+# Words starting with 3+ consonants not in this set are treated as gibberish.
+_VALID_INITIAL_3_CLUSTERS = frozenset({
+    "стр", "здр", "взр", "взл", "взм", "взд", "взб", "взг", "взн", "взв",
+    "всп", "вст", "вск", "всх", "всч", "всл",
+    "скр", "спр", "сгр", "сдр",
+    "мгн",
+})
+
+
 def _looks_like_cyrillic_mash(word: str) -> bool:
     if len(word) < 5:
         return False
 
-    russian_vowels = sum(char in "аеёиоуыэюя" for char in word)
-    if russian_vowels / len(word) < 0.2:
+    vowel_count = sum(char in _RUSSIAN_VOWELS for char in word)
+    if vowel_count / len(word) < 0.2:
         return True
 
-    return len(set(word)) <= 3 and word[:2] == word[-2:]
+    if len(set(word)) <= 3 and word[:2] == word[-2:]:
+        return True
+
+    # Find leading consonant cluster length
+    leading = 0
+    while leading < len(word) and word[leading] not in _RUSSIAN_VOWELS:
+        leading += 1
+
+    if leading >= 3:
+        cluster = word[:leading]
+        # Check every 3-gram of the cluster against the valid-clusters whitelist
+        if not any(cluster[i:i + 3] in _VALID_INITIAL_3_CLUSTERS for i in range(len(cluster) - 2)):
+            return True
+
+    return False
 
 
 def _looks_like_wrong_keyboard_layout_word(word: str) -> bool:
