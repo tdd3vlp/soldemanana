@@ -118,6 +118,7 @@ class ConversationService:
             await self._ensure_russian_input_translation(response, text, user)
             self._remove_repeated_correction_reply(response)
             self._ensure_conversation_reply(response)
+            self._ensure_reply_translation(response)
             self._normalize_response_spanish_punctuation(response)
 
             await self.user_service.save_message(
@@ -276,6 +277,27 @@ class ConversationService:
 
         response["reply"] = "Estoy bien, gracias. ¿Qué tal tu día?"
         response["reply_translation"] = "Я хорошо, спасибо. Как проходит твой день?"
+
+    @staticmethod
+    def _ensure_reply_translation(response: dict) -> None:
+        reply_translation = response.get("reply_translation")
+        if isinstance(reply_translation, str) and reply_translation.strip():
+            return
+
+        reply = response.get("reply")
+        if not isinstance(reply, str):
+            return
+
+        translations = {
+            "¡hola! ¿cómo estás?": "Привет! Как дела?",
+            "hola, ¿cómo estás?": "Привет, как дела?",
+            "¿cómo estás?": "Как дела?",
+            "estoy bien, gracias. ¿qué tal tu día?": (
+                "Я хорошо, спасибо. Как проходит твой день?"
+            ),
+        }
+        normalized_reply = " ".join(reply.split()).casefold()
+        response["reply_translation"] = translations.get(normalized_reply)
 
     @classmethod
     def _normalize_response_spanish_punctuation(cls, response: dict) -> None:

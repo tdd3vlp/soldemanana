@@ -85,6 +85,17 @@ def test_ensure_conversation_reply_adds_fallback_after_repeated_reply_removed() 
     assert response["reply_translation"] == "Я хорошо, спасибо. Как проходит твой день?"
 
 
+def test_ensure_reply_translation_adds_greeting_fallback() -> None:
+    response = {
+        "reply": "¡Hola! ¿Cómo estás?",
+        "reply_translation": None,
+    }
+
+    ConversationService._ensure_reply_translation(response)
+
+    assert response["reply_translation"] == "Привет! Как дела?"
+
+
 def test_ensure_natural_variant_reconstructs_question_from_word_corrections() -> None:
     response = {
         "has_errors": True,
