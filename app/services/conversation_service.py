@@ -132,7 +132,8 @@ class ConversationService:
                 self._apply_corrections_to_natural_variant(response)
                 self._remove_stale_natural_variant(response, history)
             await self._ensure_russian_input_translation(response, text, user)
-            self._remove_repeated_correction_reply(response)
+            if not is_russian_input:
+                self._remove_repeated_correction_reply(response)
             self._remove_echoed_question_reply(response, text)
             self._ensure_conversation_reply(response)
             await self._ensure_reply_translation(response, user)
@@ -354,8 +355,8 @@ class ConversationService:
         if isinstance(reply, str) and reply.strip():
             return
 
-        response["reply"] = "Estoy bien, gracias. ¿Qué tal tu día?"
-        response["reply_translation"] = "Я хорошо, спасибо. Как проходит твой день?"
+        response["reply"] = "¡Cuéntame! ¿Qué tal te va?"
+        response["reply_translation"] = None
 
     async def _ensure_reply_translation(self, response: dict, user: User) -> None:
         reply_translation = response.get("reply_translation")

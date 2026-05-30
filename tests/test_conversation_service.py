@@ -81,8 +81,8 @@ def test_ensure_conversation_reply_adds_fallback_after_repeated_reply_removed() 
     ConversationService._remove_repeated_correction_reply(response)
     ConversationService._ensure_conversation_reply(response)
 
-    assert response["reply"] == "Estoy bien, gracias. ¿Qué tal tu día?"
-    assert response["reply_translation"] == "Я хорошо, спасибо. Как проходит твой день?"
+    assert response["reply"] == "¡Cuéntame! ¿Qué tal te va?"
+    assert response["reply_translation"] is None
 
 
 async def test_ensure_reply_translation_keeps_existing_translation(monkeypatch) -> None:
