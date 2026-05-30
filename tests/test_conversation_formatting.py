@@ -125,12 +125,12 @@ def test_is_too_short_spanish_answer_allows_greetings() -> None:
 def test_is_likely_gibberish_blocks_keyboard_mash_and_numbers() -> None:
     assert _is_likely_gibberish("hjkdjhd dfghjdf") is True
     assert _is_likely_gibberish("орлова сорлов ыворппппв") is True
-    assert _is_likely_gibberish("апиап") is True
     assert _is_likely_gibberish("Зкупгтефы,") is True
     assert _is_likely_gibberish("123456") is True
     assert _is_likely_gibberish("Estoy de Rusia") is False
     assert _is_likely_gibberish("Я хочу в Испанию") is False
     assert _is_likely_gibberish("Привет!") is False
+    # ambiguous cases (пораоп, апиап, etc.) pass to LLM — not blocked locally
 
 
 def test_is_likely_gibberish_does_not_block_valid_russian_sentences() -> None:

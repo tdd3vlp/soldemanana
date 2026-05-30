@@ -120,6 +120,8 @@ class ConversationService:
                         "Попробуй ещё раз."
                     ),
                 }
+            if response.get("unclear"):
+                return {"unclear": True}
             is_russian_input = self._contains_cyrillic(text)
             self._normalize_response_spanish_punctuation(response)
             self._keep_current_message_corrections(response, text)

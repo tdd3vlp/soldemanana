@@ -32,7 +32,7 @@ BASE_RULES = (
 )
 
 CONVERSATION_SCHEMA = (
-    '{"has_errors":bool,"corrections":[{"original":str,"corrected":str,'
+    '{"unclear":bool,"has_errors":bool,"corrections":[{"original":str,"corrected":str,'
     '"error_type":str}],"natural_variant":str|null,'
     '"reply":str,"reply_translation":str|null}'
 )
@@ -60,6 +60,9 @@ def build_system_prompt(
 
     parts.append(
         "Mode: chat. Reply in Spanish with one short follow-up question. "
+        "If the user input is indecipherable (keyboard mashing, random character sequences "
+        "that do not form recognizable Russian or Spanish words), set unclear=true and all "
+        "other fields to empty/default values. "
         f"Rules:\n{format_conversation_rules_for_prompt()}\n"
         "natural_variant must be only a correction/translation of the latest user message; "
         "when there are errors, natural_variant must fix ALL errors (spelling, grammar, punctuation) "

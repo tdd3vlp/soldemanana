@@ -12,6 +12,7 @@ class CorrectionItem(BaseModel):
 class ConversationLLMResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    unclear: bool = False
     has_errors: bool = False
     corrections: list[CorrectionItem] = []
     natural_variant: str | None = None
