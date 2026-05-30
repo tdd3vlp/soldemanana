@@ -129,6 +129,7 @@ class ConversationService:
             else:
                 self._ensure_punctuation_natural_variant(response, text)
                 self._ensure_natural_variant(response, text)
+                self._apply_corrections_to_natural_variant(response)
                 self._remove_stale_natural_variant(response, history)
             await self._ensure_russian_input_translation(response, text, user)
             self._remove_repeated_correction_reply(response)
@@ -379,6 +380,31 @@ class ConversationService:
             response["natural_variant"] = ConversationService._normalize_spanish_punctuation(
                 corrected_text
             )
+
+    @staticmethod
+    def _apply_corrections_to_natural_variant(response: dict) -> None:
+        """Ensure every correction in corrections[] is actually applied to natural_variant."""
+        natural_variant = response.get("natural_variant")
+        corrections = response.get("corrections")
+        if not isinstance(natural_variant, str) or not natural_variant.strip():
+            return
+        if not isinstance(corrections, list) or not corrections:
+            return
+
+        result = natural_variant
+        for correction in corrections:
+            original = correction.get("original", "") if isinstance(correction, dict) else ""
+            corrected = correction.get("corrected", "") if isinstance(correction, dict) else ""
+            if not original or not corrected or original.casefold() == corrected.casefold():
+                continue
+            pattern = r"\b" + re.escape(original) + r"\b"
+            try:
+                result = re.sub(pattern, corrected, result, flags=re.IGNORECASE)
+            except re.error:
+                pass
+
+        if result != natural_variant:
+            response["natural_variant"] = result
 
     @staticmethod
     def _ensure_punctuation_natural_variant(response: dict, text: str) -> None:
