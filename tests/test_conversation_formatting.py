@@ -100,6 +100,11 @@ def test_is_likely_english_allows_titles_and_names() -> None:
 def test_is_too_short_spanish_answer_detects_insufficient_replies() -> None:
     assert _is_too_short_spanish_answer("Si, muy") is True
     assert _is_too_short_spanish_answer("Sí") is True
+    assert _is_too_short_spanish_answer("Me gusta") is True
+    assert _is_too_short_spanish_answer("Me encanta") is True
+    assert _is_too_short_spanish_answer("Paella") is True
+    assert _is_too_short_spanish_answer("Sobre comida") is True
+    assert _is_too_short_spanish_answer("La comida italiana") is True
     assert _is_too_short_spanish_answer("Toco la guitarra") is False
     assert _is_too_short_spanish_answer("Играл на гитаре") is False
 

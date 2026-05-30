@@ -314,12 +314,23 @@ def _is_too_short_spanish_answer(text: str | None) -> bool:
         return False
 
     words = re.findall(r"[a-záéíóúüñ]+", text.lower())
-    if not words or len(words) > 2:
+    if not words or len(words) > 3:
         return False
+    if any(word in _SPANISH_QUESTION_WORDS for word in words) or "por qué" in text.lower():
+        return False
+    if len(words) == 1:
+        return True
 
     insufficient_words = {
         "bien",
         "claro",
+        "comida",
+        "encanta",
+        "encantan",
+        "favorita",
+        "favorito",
+        "gusta",
+        "gustan",
         "mal",
         "mucho",
         "muy",
@@ -332,7 +343,38 @@ def _is_too_short_spanish_answer(text: str | None) -> bool:
         "también",
         "vale",
     }
-    return all(word in insufficient_words for word in words)
+    filler_words = {
+        "a", "al", "de", "del", "el", "en", "la", "las", "lo", "los",
+        "me", "mi", "sobre", "un", "una",
+    }
+    fragment_starters = {
+        "a", "al", "de", "del", "el", "en", "la", "las", "lo", "los",
+        "sobre", "un", "una",
+    }
+    if words[0] in fragment_starters:
+        return True
+
+    meaningful_words = [word for word in words if word not in filler_words]
+    return not meaningful_words or all(word in insufficient_words for word in meaningful_words)
+
+
+_SPANISH_QUESTION_WORDS = {
+    "adonde",
+    "cómo",
+    "como",
+    "cuál",
+    "cual",
+    "cuándo",
+    "cuando",
+    "cuánto",
+    "cuanto",
+    "dónde",
+    "donde",
+    "qué",
+    "que",
+    "quién",
+    "quien",
+}
 
 
 def _build_russian_input_translation(text: str, natural_variant: str) -> str:
