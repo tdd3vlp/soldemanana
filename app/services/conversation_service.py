@@ -226,7 +226,7 @@ class ConversationService:
         try:
             translation = await llm_client.complete(
                 (
-                    "Translate the user's Russian phrase into natural Spanish from Spain. "
+                    "Translate the user's text (Russian or mixed Russian-Spanish) into natural Spanish from Spain. "
                     "Return JSON only: {\"translation\":str}. "
                     "Do not answer the phrase and do not add explanations."
                 ),

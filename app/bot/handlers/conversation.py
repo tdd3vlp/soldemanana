@@ -109,13 +109,11 @@ async def handle_conversation_message(
     is_russian_input = _contains_cyrillic(message.text)
 
     if response.get("has_errors") and response.get("corrections"):
-        parts.append(
-            _build_inline_corrections(
-                message.text,
-                response["corrections"],
-                response.get("natural_variant"),
-            )
-        )
+        corrections = response["corrections"]
+        parts.append(_build_inline_corrections(message.text, corrections))
+        natural_variant = response.get("natural_variant")
+        if len(corrections) > 5 and natural_variant:
+            parts.append(f"✅ <code>{escape(natural_variant)}</code>")
         parts.append("")
 
     if is_russian_input and response.get("natural_variant"):

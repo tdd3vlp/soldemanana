@@ -54,8 +54,9 @@ LLM_RESPONSE_RULES = (
     ConversationRule(
         "russian_to_spanish",
         (
-            "If the latest user message is Russian/Cyrillic, translate it into "
-            "natural Spanish from Spain, do not mark it as an error, then continue the dialogue."
+            "If the latest user message is Russian/Cyrillic or a mix of Russian and Spanish, "
+            "translate the entire message into natural Spanish from Spain, "
+            "do not mark it as an error, then continue the dialogue."
         ),
     ),
     ConversationRule(
@@ -65,9 +66,8 @@ LLM_RESPONSE_RULES = (
     ConversationRule(
         "spanish_orthography",
         (
-            "Correct Spanish orthography using grammar, vocabulary and context, including "
-            "written accents and diacritics (á, é, í, ó, ú, ü, ñ). Treat missing or wrong "
-            "diacritics as errors when standard Spanish requires them. "
+            "Correct every error in the latest message: spelling, grammar, punctuation, "
+            "style, word choice. Include written accents and diacritics (á, é, í, ó, ú, ü, ñ). "
             "Pay special attention to words that change meaning with an accent: "
             "si→sí (affirmative yes), mi→mí (pronoun me), tu→tú (pronoun you), "
             "el→él (pronoun he), mas→más (more), se→sé (I know), te→té (tea)."
@@ -76,20 +76,14 @@ LLM_RESPONSE_RULES = (
     ConversationRule(
         "natural_reply",
         (
-            "Replies must be short, natural and varied. Continue the topic like a person; "
-            "do not drill into tiny details when a broader language-practice follow-up is better."
+            "Reply with 1–3 sentences plus exactly one follow-up question. "
+            "Never include more than one question in a single reply. "
+            "Vary topics; do not drill into tiny details."
         ),
     ),
     ConversationRule(
         "no_explanations",
         "Do not explain mistakes in chat responses; show only the correction/variant and continue.",
-    ),
-    ConversationRule(
-        "polished_variant",
-        (
-            "If the user makes many errors, natural_variant should be the logical phrase "
-            "they probably meant, polished into a well-formed grammatical sentence."
-        ),
     ),
 )
 
