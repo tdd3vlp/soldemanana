@@ -133,6 +133,7 @@ class ConversationService:
                 self._remove_stale_natural_variant(response, history)
             await self._ensure_russian_input_translation(response, text, user)
             self._remove_repeated_correction_reply(response)
+            self._remove_echoed_question_reply(response, text)
             self._ensure_conversation_reply(response)
             await self._ensure_reply_translation(response, user)
             self._normalize_response_spanish_punctuation(response)
@@ -301,6 +302,51 @@ class ConversationService:
 
         response["reply"] = ""
         response["reply_translation"] = None
+
+    _ACCENT_MAP = str.maketrans("áéíóúüñÁÉÍÓÚÜÑ", "aeiouunAEIOUUN")
+
+    @classmethod
+    def _normalize_question(cls, text: str) -> str:
+        return re.sub(r"\W+", " ", text.lower().translate(cls._ACCENT_MAP)).strip()
+
+    @staticmethod
+    def _extract_last_question(text: str) -> str | None:
+        q_idx = text.rfind("?")
+        if q_idx == -1:
+            return None
+        before = text[:q_idx]
+        start = max(before.rfind("?") + 1, before.rfind(".") + 1, before.rfind("!") + 1, 0)
+        segment = re.sub(r"^[¿¡\s]+", "", text[start : q_idx + 1]).strip()
+        return segment or None
+
+    @classmethod
+    def _remove_echoed_question_reply(cls, response: dict, user_text: str) -> None:
+        reply = response.get("reply")
+        if not isinstance(reply, str) or not reply.strip():
+            return
+
+        user_q = cls._extract_last_question(user_text)
+        if not user_q or len(user_q.split()) > 5:
+            return
+
+        reply_q = cls._extract_last_question(reply)
+        if not reply_q:
+            return
+
+        if cls._normalize_question(user_q) != cls._normalize_question(reply_q):
+            return
+
+        # Find start of the echoed question in reply and trim
+        q_idx = reply.rfind("?")
+        before = reply[:q_idx]
+        start = max(before.rfind("?") + 1, before.rfind(".") + 1, before.rfind("!") + 1, 0)
+        paren_idx = reply.rfind("¿", start, q_idx)
+        if paren_idx != -1:
+            start = paren_idx
+        trimmed = reply[:start].rstrip(" ,")
+        if trimmed:
+            response["reply"] = trimmed
+            response["reply_translation"] = None
 
     @staticmethod
     def _ensure_conversation_reply(response: dict) -> None:
