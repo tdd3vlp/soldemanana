@@ -1,4 +1,5 @@
 from app.bot.keyboards.inline import (
+    get_reply_translation_keyboard,
     get_save_word_keyboard,
     get_subscription_keyboard,
     get_subscription_webapp_keyboard,
@@ -21,6 +22,7 @@ __all__ = [
     "get_main_menu_keyboard",
     "get_exit_mode_keyboard",
     "get_settings_keyboard",
+    "get_reply_translation_keyboard",
     "get_save_word_keyboard",
     "get_subscription_keyboard",
     "get_subscription_webapp_keyboard",

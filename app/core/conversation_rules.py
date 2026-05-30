@@ -63,6 +63,14 @@ LLM_RESPONSE_RULES = (
         "Track important Spanish punctuation, including paired ¿...? and ¡...! marks.",
     ),
     ConversationRule(
+        "spanish_orthography",
+        (
+            "Correct Spanish orthography using grammar, vocabulary and context, including "
+            "written accents and diacritics (á, é, í, ó, ú, ü, ñ). Treat missing or wrong "
+            "diacritics as errors when standard Spanish requires them."
+        ),
+    ),
+    ConversationRule(
         "natural_reply",
         (
             "Replies must be short, natural and varied. Continue the topic like a person; "

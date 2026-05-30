@@ -1,12 +1,13 @@
 import re
 from html import escape
+from uuid import uuid4
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.keyboards import get_exit_mode_keyboard
+from app.bot.keyboards import get_exit_mode_keyboard, get_reply_translation_keyboard
 from app.bot.states import ConversationStates
 from app.core.conversation_rules import (
     SHORT_ANSWER_TEXT,
@@ -120,10 +121,44 @@ async def handle_conversation_message(
     if bot_reply:
         parts.append(f"🇪🇸 {bot_reply}")
 
-    if response.get("reply_translation"):
-        parts.append(f"<i>({response['reply_translation']})</i>")
+    reply_markup = None
+    reply_translation = response.get("reply_translation")
+    if reply_translation:
+        token = uuid4().hex[:12]
+        state_data = await state.get_data()
+        translations = state_data.get("conversation_translations", {})
+        if not isinstance(translations, dict):
+            translations = {}
+        translations[token] = str(reply_translation)
+        translations = dict(list(translations.items())[-20:])
+        await state.update_data(conversation_translations=translations)
+        reply_markup = get_reply_translation_keyboard(token)
 
-    await message.answer("\n".join(parts))
+    await message.answer("\n".join(parts), reply_markup=reply_markup)
+
+
+@router.callback_query(ConversationStates.active, F.data.startswith("conv:translate:"))
+async def show_reply_translation(callback: CallbackQuery, state: FSMContext) -> None:
+    token = (callback.data or "").removeprefix("conv:translate:")
+    state_data = await state.get_data()
+    translations = state_data.get("conversation_translations", {})
+    if not isinstance(translations, dict):
+        translations = {}
+
+    translation = translations.pop(token, None)
+    if not translation:
+        await callback.answer("Перевод уже недоступен")
+        return
+
+    await state.update_data(conversation_translations=translations)
+    message = callback.message
+    if not message:
+        await callback.answer()
+        return
+
+    current_text = message.html_text or message.text or ""
+    await message.edit_text(f"{current_text}\n<i>({escape(str(translation))})</i>")
+    await callback.answer()
 
 
 def _contains_cyrillic(text: str | None) -> bool:

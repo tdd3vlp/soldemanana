@@ -8,6 +8,12 @@ def get_save_word_keyboard(message_id: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def get_reply_translation_keyboard(token: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Перевести", callback_data=f"conv:translate:{token}")
+    return builder.as_markup()
+
+
 def get_subscription_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="◀️ Назад", callback_data="menu:main")

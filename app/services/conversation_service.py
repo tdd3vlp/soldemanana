@@ -40,7 +40,6 @@ SPANISH_QUESTION_WORDS = (
     "quiénes",
 )
 
-
 def _find_next(chars: list[str], target: str, start: int) -> int:
     try:
         return chars.index(target, start)
