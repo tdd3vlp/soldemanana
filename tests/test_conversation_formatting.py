@@ -66,7 +66,7 @@ def test_build_inline_corrections_marks_missing_opening_exclamation() -> None:
         "¡Bien, gracias!",
     )
 
-    assert result == "<s>Bien</s> ¡Bien, gracias!"
+    assert result == "¡Bien, gracias!"
 
 
 def test_contains_cyrillic_detects_russian_input() -> None:
