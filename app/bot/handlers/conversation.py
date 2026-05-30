@@ -457,6 +457,8 @@ def _build_inline_corrections(
 
         escaped_original = escape(str(original))
         replacement = _build_inline_replacement(str(original), str(corrected))
+        if not replacement:
+            replacement = f"<s>{escaped_original}</s> {escape(str(corrected))}"
         result = result.replace(escaped_original, replacement, 1)
 
     return result
