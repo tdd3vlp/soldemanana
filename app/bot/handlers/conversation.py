@@ -10,7 +10,6 @@ from app.bot.keyboards import get_exit_mode_keyboard
 from app.bot.states import ConversationStates
 from app.core.models.user import User
 from app.services.conversation_service import ConversationService
-from app.services.limit_service import LimitService
 from app.services.user_service import UserService
 
 router = Router()
@@ -25,11 +24,6 @@ async def start_conversation(
 ) -> None:
     if not db_user.is_onboarded:
         await message.answer("❌ Сначала пройди /start для настройки бота.")
-        return
-
-    limit_service = LimitService(session)
-    if not limit_service.can_send_message(db_user):
-        await message.answer(limit_service.get_limit_exceeded_text(db_user))
         return
 
     await enter_conversation(message, state, db_user, is_new_user=False)
@@ -73,12 +67,6 @@ async def handle_conversation_message(
     session: AsyncSession,
 ) -> None:
     if message.text == "🏠 В главное меню":
-        return
-
-    limit_service = LimitService(session)
-    if not limit_service.can_send_message(db_user):
-        await message.answer(limit_service.get_limit_exceeded_text(db_user))
-        await state.clear()
         return
 
     if _is_likely_gibberish(message.text):
@@ -318,6 +306,8 @@ def _is_too_short_spanish_answer(text: str | None) -> bool:
         return False
     if any(word in _SPANISH_QUESTION_WORDS for word in words) or "por qué" in text.lower():
         return False
+    if all(word in _SPANISH_GREETING_WORDS for word in words):
+        return False
     if len(words) == 1:
         return True
 
@@ -374,6 +364,17 @@ _SPANISH_QUESTION_WORDS = {
     "que",
     "quién",
     "quien",
+}
+
+
+_SPANISH_GREETING_WORDS = {
+    "buenas",
+    "buenos",
+    "dias",
+    "días",
+    "hola",
+    "noches",
+    "tardes",
 }
 
 

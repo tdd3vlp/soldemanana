@@ -1,13 +1,14 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.filters import IsAdmin
+from app.core.enums import SubscriptionTier
 from app.core.models.ai_usage import AIUsage
-from app.core.models.user import User
 from app.core.models.message import Message as DBMessage
+from app.core.models.user import User
 
 router = Router()
 
@@ -41,10 +42,11 @@ async def cmd_broadcast(message: Message) -> None:
 
 @router.message(Command("stats"), IsAdmin())
 async def cmd_stats(message: Message, session: AsyncSession) -> None:
-    from app.core.enums import SubscriptionTier
-
     free_count = await session.scalar(
         select(func.count(User.id)).where(User.subscription_tier == SubscriptionTier.FREE)
+    )
+    basic_count = await session.scalar(
+        select(func.count(User.id)).where(User.subscription_tier == SubscriptionTier.BASIC)
     )
     premium_count = await session.scalar(
         select(func.count(User.id)).where(User.subscription_tier == SubscriptionTier.PREMIUM)
@@ -64,6 +66,7 @@ async def cmd_stats(message: Message, session: AsyncSession) -> None:
     await message.answer(
         f"📊 <b>Статистика подписок</b>\n\n"
         f"🆓 FREE: <b>{free_count}</b>\n"
+        f"💎 BASIC: <b>{basic_count}</b>\n"
         f"⭐ PREMIUM: <b>{premium_count}</b>\n\n"
         f"🤖 AI за месяц: "
         f"<b>{int(prompt_tokens) + int(completion_tokens)}</b> токенов\n"

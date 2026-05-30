@@ -1,6 +1,12 @@
-from sqlalchemy import BigInteger, String, Text, ForeignKey, UniqueConstraint
+from typing import TYPE_CHECKING
+
+from sqlalchemy import BigInteger, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.core.models.user import User
 
 
 class VocabularyEntry(Base, TimestampMixin):

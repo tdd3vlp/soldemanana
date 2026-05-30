@@ -1,6 +1,12 @@
-from sqlalchemy import BigInteger, String, Text, ForeignKey
+from typing import TYPE_CHECKING
+
+from sqlalchemy import BigInteger, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.core.models.message import Message
 
 
 class Correction(Base, TimestampMixin):

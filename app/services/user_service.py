@@ -1,10 +1,12 @@
 from datetime import date
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
-from app.core.models.user import User
-from app.core.models.message import Message
-from app.core.enums import BotMode, MessageRole
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.config import settings
+from app.core.enums import BotMode, MessageRole
+from app.core.models.message import Message
+from app.core.models.user import User
 
 
 class UserService:
@@ -63,8 +65,6 @@ class UserService:
         role: MessageRole,
         mode: BotMode,
         corrected_text: str | None = None,
-        scenario_id: str | None = None,
-        grammar_topic: str | None = None,
         has_errors: bool = False,
     ) -> Message:
         message = Message(
@@ -73,8 +73,6 @@ class UserService:
             role=role,
             mode=mode,
             corrected_text=corrected_text,
-            scenario_id=scenario_id,
-            grammar_topic=grammar_topic,
             has_errors=has_errors,
         )
         self.session.add(message)
@@ -87,14 +85,8 @@ class UserService:
         user: User,
         mode: BotMode,
         limit: int = 8,
-        scenario_id: str | None = None,
     ) -> list[Message]:
-        query = (
-            select(Message)
-            .where(Message.user_id == user.id, Message.mode == mode)
-        )
-        if scenario_id:
-            query = query.where(Message.scenario_id == scenario_id)
+        query = select(Message).where(Message.user_id == user.id, Message.mode == mode)
         query = query.order_by(Message.created_at.desc()).limit(limit)
         result = await self.session.execute(query)
         messages = list(result.scalars().all())
@@ -105,13 +97,11 @@ class UserService:
         user: User,
         mode: BotMode,
         limit: int | None = None,
-        scenario_id: str | None = None,
     ) -> list[dict]:
         history = await self.get_dialog_history(
             user=user,
             mode=mode,
             limit=limit or settings.dialog_history_size,
-            scenario_id=scenario_id,
         )
         return self.build_compact_messages(history)
 

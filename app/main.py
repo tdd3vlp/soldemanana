@@ -1,10 +1,11 @@
 import asyncio
+
 import structlog
 from aiogram import Bot
 from aiogram.types import BotCommand
 
-from app.config import settings
 from app.bot.dispatcher import create_bot, create_dispatcher
+from app.config import settings
 from app.infrastructure.redis import redis_client
 
 logger = structlog.get_logger()

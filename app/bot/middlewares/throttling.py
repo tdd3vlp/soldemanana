@@ -1,8 +1,11 @@
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, Message
+from aiogram.types import Message, TelegramObject
+
+from app.core.constants import THROTTLE_KEY_PREFIX, THROTTLE_RATE
 from app.infrastructure.redis.client import redis_client
-from app.core.constants import THROTTLE_RATE, THROTTLE_KEY_PREFIX
 
 
 class ThrottlingMiddleware(BaseMiddleware):

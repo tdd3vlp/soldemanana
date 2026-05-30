@@ -1,7 +1,7 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from app.core.constants import LEVEL_LABELS, GOAL_LABELS
-from app.core.enums import CorrectionIntensity
+
+from app.core.constants import GOAL_LABELS, LEVEL_LABELS
 
 
 def get_level_keyboard() -> InlineKeyboardMarkup:

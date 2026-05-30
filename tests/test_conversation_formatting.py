@@ -109,6 +109,12 @@ def test_is_too_short_spanish_answer_detects_insufficient_replies() -> None:
     assert _is_too_short_spanish_answer("Играл на гитаре") is False
 
 
+def test_is_too_short_spanish_answer_allows_greetings() -> None:
+    assert _is_too_short_spanish_answer("Hola!") is False
+    assert _is_too_short_spanish_answer("Buenos días") is False
+    assert _is_too_short_spanish_answer("Buenas tardes") is False
+
+
 def test_is_likely_gibberish_blocks_keyboard_mash_and_numbers() -> None:
     assert _is_likely_gibberish("hjkdjhd dfghjdf") is True
     assert _is_likely_gibberish("орлова сорлов ыворппппв") is True

@@ -73,7 +73,6 @@ class ConversationService:
             level=user.level or "A2",
             goal=user.goal or "communication",
             correction_intensity=user.correction_intensity,
-            mode="conversation",
             memory_context=memory_context,
         )
 

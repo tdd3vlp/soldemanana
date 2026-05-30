@@ -19,7 +19,6 @@ class Settings(BaseSettings):
     openai_strong_model: str = "gpt-4o"
     openai_summary_model: str = "gpt-4o-mini"
     openai_max_tokens: int = 450
-    openai_correction_max_tokens: int = 650
     openai_summary_max_tokens: int = 160
     openai_temperature: float = 0.7
     dialog_history_size: int = 4
@@ -48,9 +47,6 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
     environment: str = "development"
-
-    yookassa_shop_id: str = ""
-    yookassa_secret_key: str = ""
 
     @computed_field
     @property

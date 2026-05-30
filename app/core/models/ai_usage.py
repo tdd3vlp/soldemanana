@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import BigInteger, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.core.models.user import User
 
 
 class AIUsage(Base, TimestampMixin):

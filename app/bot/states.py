@@ -11,20 +11,6 @@ class ConversationStates(StatesGroup):
     active = State()
 
 
-class CorrectionStates(StatesGroup):
-    waiting_phrase = State()
-
-
-class ScenarioStates(StatesGroup):
-    choosing_scenario = State()
-    active = State()
-
-
-class GrammarStates(StatesGroup):
-    choosing_topic = State()
-    doing_exercise = State()
-
-
 class SettingsStates(StatesGroup):
     main = State()
     waiting_level = State()

@@ -1,7 +1,9 @@
 import json
 from enum import StrEnum
+
 import structlog
 from openai import AsyncOpenAI
+
 from app.config import settings
 
 logger = structlog.get_logger()
@@ -9,9 +11,6 @@ logger = structlog.get_logger()
 
 class LLMTask(StrEnum):
     CHAT = "chat"
-    CORRECTION = "correction"
-    SCENARIO = "scenario"
-    GRAMMAR = "grammar"
     SUMMARY = "summary"
 
 
@@ -30,8 +29,6 @@ class LLMClient:
     def _model_for_task(self, task: LLMTask, premium: bool = False) -> str:
         if task == LLMTask.SUMMARY:
             return settings.openai_summary_model
-        if task in {LLMTask.CORRECTION, LLMTask.GRAMMAR} and premium:
-            return settings.openai_strong_model
         return settings.openai_fast_model or settings.openai_model
 
     def _max_tokens_for_task(self, task: LLMTask, max_tokens: int | None) -> int:
@@ -39,8 +36,6 @@ class LLMClient:
             return max_tokens
         if task == LLMTask.SUMMARY:
             return settings.openai_summary_max_tokens
-        if task in {LLMTask.CORRECTION, LLMTask.GRAMMAR}:
-            return settings.openai_correction_max_tokens
         return settings.openai_max_tokens
 
     def _usage_meta(self, response, model: str) -> dict:

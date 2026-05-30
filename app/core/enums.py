@@ -19,9 +19,6 @@ class LearningGoal(StrEnum):
 
 class BotMode(StrEnum):
     CONVERSATION = "conversation"
-    CORRECTION = "correction"
-    SCENARIOS = "scenarios"
-    GRAMMAR = "grammar"
 
 
 class CorrectionIntensity(StrEnum):
@@ -32,6 +29,7 @@ class CorrectionIntensity(StrEnum):
 
 class SubscriptionTier(StrEnum):
     FREE = "free"
+    BASIC = "basic"
     PREMIUM = "premium"
 
 
@@ -39,15 +37,3 @@ class MessageRole(StrEnum):
     USER = "user"
     ASSISTANT = "assistant"
 
-
-class GrammarTopic(StrEnum):
-    SER_ESTAR = "ser_estar"
-    INDICATIVO = "indicativo"
-    SUBJUNTIVO = "subjuntivo"
-    IMPERATIVO = "imperativo"
-    PRONOUNS = "pronouns"
-    ARTICLES = "articles"
-    PREPOSITIONS = "prepositions"
-    PAST_TENSES = "past_tenses"
-    FUTURE = "future"
-    CONDITIONAL = "conditional"

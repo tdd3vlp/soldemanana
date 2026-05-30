@@ -1,13 +1,23 @@
-from sqlalchemy import BigInteger, String, Integer, Boolean, Date, Enum as SAEnum, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import date
-from app.core.models.base import Base, TimestampMixin
+from typing import TYPE_CHECKING
+
+from sqlalchemy import BigInteger, Boolean, Date, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.enums import (
+    CorrectionIntensity,
     LanguageLevel,
     LearningGoal,
-    CorrectionIntensity,
     SubscriptionTier,
 )
+from app.core.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.core.models.ai_usage import AIUsage
+    from app.core.models.message import Message
+    from app.core.models.subscription import Subscription
+    from app.core.models.vocabulary import VocabularyEntry
 
 
 class User(Base, TimestampMixin):
@@ -20,18 +30,32 @@ class User(Base, TimestampMixin):
     last_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     level: Mapped[str | None] = mapped_column(
-        SAEnum(LanguageLevel, name="language_level", values_callable=lambda x: [e.value for e in x]), nullable=True
+        SAEnum(
+            LanguageLevel,
+            name="language_level",
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=True,
     )
     goal: Mapped[str | None] = mapped_column(
-        SAEnum(LearningGoal, name="learning_goal", values_callable=lambda x: [e.value for e in x]), nullable=True
+        SAEnum(LearningGoal, name="learning_goal", values_callable=lambda x: [e.value for e in x]),
+        nullable=True,
     )
     correction_intensity: Mapped[str] = mapped_column(
-        SAEnum(CorrectionIntensity, name="correction_intensity", values_callable=lambda x: [e.value for e in x]),
+        SAEnum(
+            CorrectionIntensity,
+            name="correction_intensity",
+            values_callable=lambda x: [e.value for e in x],
+        ),
         nullable=False,
     )
 
     subscription_tier: Mapped[str] = mapped_column(
-        SAEnum(SubscriptionTier, name="subscription_tier", values_callable=lambda x: [e.value for e in x]),
+        SAEnum(
+            SubscriptionTier,
+            name="subscription_tier",
+            values_callable=lambda x: [e.value for e in x],
+        ),
         nullable=False,
     )
     is_onboarded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

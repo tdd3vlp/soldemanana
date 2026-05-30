@@ -349,7 +349,7 @@ async def subscription_web_app() -> HTMLResponse:
         <button class="plan-toggle" type="button" aria-expanded="false">
           <span>
             <span class="plan-name">
-              PREMIUM <span class="plan-price">990₽ / 14.99$ в месяц</span>
+              PREMIUM <span class="plan-price">999₽ / 14.99$ в месяц</span>
             </span>
             <span class="plan-summary">Ваш персональный AI Spanish Coach</span>
           </span>
@@ -404,7 +404,7 @@ async def subscription_web_app() -> HTMLResponse:
           return;
         }
         const message = action === "basic"
-          ? "Basic скоро станет доступен. Сейчас это рекламная витрина без оплаты."
+          ? "Оплату подключим позже. Сейчас это рекламная витрина тарифов."
           : "Продолжайте пользоваться бесплатным тарифом в боте.";
         if (tg) {
           tg.showAlert(message);

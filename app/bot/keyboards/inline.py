@@ -8,10 +8,8 @@ def get_save_word_keyboard(message_id: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def get_subscription_keyboard(tier: str = "free") -> InlineKeyboardMarkup:
+def get_subscription_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    if tier == "free":
-        builder.button(text="⭐ Оформить PREMIUM", callback_data="sub:premium")
     builder.button(text="◀️ Назад", callback_data="menu:main")
     builder.adjust(1)
     return builder.as_markup()
@@ -21,14 +19,5 @@ def get_subscription_webapp_keyboard(web_app_url: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="💎 Открыть тарифы", web_app=WebAppInfo(url=web_app_url))
     builder.button(text="◀️ Назад", callback_data="menu:main")
-    builder.adjust(1)
-    return builder.as_markup()
-
-
-def get_grammar_next_keyboard() -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    builder.button(text="➡️ Следующее упражнение", callback_data="grammar:next")
-    builder.button(text="📚 Другая тема", callback_data="grammar:topics")
-    builder.button(text="◀️ В главное меню", callback_data="menu:main")
     builder.adjust(1)
     return builder.as_markup()
